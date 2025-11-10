@@ -1,0 +1,56 @@
+openapi: 3.1.0
+info:
+  title: Diary Report API
+  version: 1.0.0
+  description: |
+    Simple API specification for diary reports.
+servers:
+  - url: https://api.example.com
+paths:
+  /reports:
+    get:
+      summary: List diary reports
+      operationId: listReports
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+  /reports/{id}:
+    get:
+      summary: Get a specific report
+      operationId: getReport
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+components:
+  schemas:
+    Report:
+      type: object
+      required:
+        - id
+        - title
+        - createdAt
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
