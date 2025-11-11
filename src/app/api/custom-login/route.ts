@@ -5,7 +5,16 @@ import { supabase } from "@/utils/supabase/client";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  {
+    db: {
+      schema: "Timesheet", // 👈 กำหนด default schema
+    },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
 );
 
 export async function POST(req: Request) {
@@ -21,7 +30,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Query ไปยังตาราง 'user' ใน 'Timesheet'
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
 
       .schema("Timesheet")
       .from("user")
@@ -50,7 +59,6 @@ export async function POST(req: Request) {
       match: data.PASSWORD === password,
     });
 
-
     /// 3. ตรวจสอบรหัสผ่าน (แปลงเป็น String ทั้งคู่เพื่อเปรียบเทียบ)
     const storedPassword = String(data.PASSWORD);
     const providedPassword = String(password);
@@ -68,10 +76,7 @@ export async function POST(req: Request) {
     } else {
       // ถ้ารหัสผิด
       console.log("Invalid password for:", name);
-      return NextResponse.json(
-        { error: "Invalid password" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
   } catch (err) {
     console.error("API route error:", err);
