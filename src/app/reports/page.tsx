@@ -59,8 +59,8 @@ export default function DocumentsListPage() {
             .from('documents')
             .select(`UID,Document_id, report, details, nextfocus, status, date, user:UID ( NAME, ROLE )`)
             .eq('UID', uid);
-
-            // sdfdsf
+        ///sadasdasd
+        // sd
         if (error) {
             console.error("Error fetching documents:", error);
         } else {
@@ -99,7 +99,7 @@ export default function DocumentsListPage() {
             )
         );
     };
-// ----- 6. ฟังก์ชัน "บันทึก" (อัปเกรด) -----
+    // ----- 6. ฟังก์ชัน "บันทึก" (อัปเกรด) -----
     const handleSaveReports = async () => {
         setLoading(true);
 
@@ -277,17 +277,17 @@ export default function DocumentsListPage() {
                     ) : (
                         <>
                             <button
-                    type="button"
-                    className="bg-[#6e6e6e] text-white px-5 py-2 rounded-lg hover:bg-[#5c5a5a] transition text-sm font-medium"
-                    onClick={handleEditClick}
-                    disabled={loading}
-                        >
-                        {loading
-                            ? 'กำลังบันทึก...'
-                            : isEditing
-                            ? '💾 บันทึก'
-                            : '✏️ แก้ไข'}
-                        </button>
+                                type="button"
+                                className="bg-[#6e6e6e] text-white px-5 py-2 rounded-lg hover:bg-[#5c5a5a] transition text-sm font-medium"
+                                onClick={handleEditClick}
+                                disabled={loading}
+                            >
+                                {loading
+                                    ? 'กำลังบันทึก...'
+                                    : isEditing
+                                        ? '💾 บันทึก'
+                                        : '✏️ แก้ไข'}
+                            </button>
 
                         </>
                     )}
