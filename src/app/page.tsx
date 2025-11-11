@@ -1,8 +1,52 @@
-// src/app/page.tsx
-import { redirect } from 'next/navigation';
+import React from 'react';
+import Link from 'next/link';
 
-// นี่คือ Server Component ที่ทำหน้าที่ Redirect เท่านั้น
+// (UserIcon component... อยู่ที่นี่)
+const UserIcon = () => (
+  <svg className="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+  </svg>
+);
+
+const users = [
+  { id: 'boss', name: 'Boss' },
+  { id: 'nip', name: 'Nip' },
+  { id: 'pon', name: 'Pon' },
+];
+
 export default function HomePage() {
-  // สั่งเปลี่ยนเส้นทางไปยังหน้า /reports ทันที
-  redirect('/reports');
+  return (
+    <main className="flex flex-col items-center justify-center min-h-screen bg-white text-gray-800 pb-90">
+      
+      <h1 className="text-4xl font-bold mb-4">
+        แบบบันทึกการปฏิบัติงาน
+      </h1>
+      <h2 className="text-2xl text-gray-600 mb-12">
+        โปรดเลือกผู้ใช้งาน
+      </h2>
+
+      <div className="flex flex-col sm:flex-row gap-8">
+        {users.map((user) => (
+          
+          // ‼️ สังเกตการเปลี่ยนแปลงที่นี่ ‼️
+          // เรา Link ไปหน้า /login และส่ง "Query Parameter"
+          <Link 
+            href={`/login?user=${user.id}`} // 👈 เปลี่ยนจาก /login/boss เป็น /login?user=boss
+            key={user.id} 
+            className="group"
+          >
+            <div className="bg-[#333333] text-white w-64 h-64 rounded-2xl
+                            flex flex-col items-center justify-center
+                            hover:bg-gray-700 transition-all duration-200
+                            transform hover:scale-105"
+            >
+              <UserIcon />
+              <span className="text-3xl font-bold mt-4">{user.name}</span>
+            </div>
+          </Link>
+
+        ))}
+      </div>
+    </main>
+  );
 }
