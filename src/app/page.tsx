@@ -1,65 +1,52 @@
-import Image from "next/image";
+import React from 'react';
+import Link from 'next/link';
 
-export default function Home() {
+// (UserIcon component... อยู่ที่นี่)
+const UserIcon = () => (
+  <svg className="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+  </svg>
+);
+
+const users = [
+  { id: 'boss', name: 'Boss' },
+  { id: 'nip', name: 'Nip' },
+  { id: 'pon', name: 'Pon' },
+];
+
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="flex flex-col items-center justify-center min-h-screen bg-white text-gray-800 pb-90">
+      
+      <h1 className="text-4xl font-bold mb-4">
+        แบบบันทึกการปฏิบัติงาน
+      </h1>
+      <h2 className="text-2xl text-gray-600 mb-12">
+        โปรดเลือกผู้ใช้งาน
+      </h2>
+
+      <div className="flex flex-col sm:flex-row gap-8">
+        {users.map((user) => (
+          
+          // ‼️ สังเกตการเปลี่ยนแปลงที่นี่ ‼️
+          // เรา Link ไปหน้า /login และส่ง "Query Parameter"
+          <Link 
+            href={`/login?user=${user.id}`} // 👈 เปลี่ยนจาก /login/boss เป็น /login?user=boss
+            key={user.id} 
+            className="group"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now Right Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <div className="bg-[#333333] text-white w-64 h-64 rounded-2xl
+                            flex flex-col items-center justify-center
+                            hover:bg-gray-700 transition-all duration-200
+                            transform hover:scale-105"
+            >
+              <UserIcon />
+              <span className="text-3xl font-bold mt-4">{user.name}</span>
+            </div>
+          </Link>
+
+        ))}
+      </div>
+    </main>
   );
 }

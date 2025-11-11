@@ -2,55 +2,157 @@ openapi: 3.1.0
 info:
   title: Diary Report API
   version: 1.0.0
-  description: |
-    Simple API specification for diary reports.
+  description: รายละเอียดข้อมูลรายงานที่ใช้งานอยู่ในระบบปัจจุบัน
 servers:
-  - url: https://api.example.com
+  - url: https://{projectRef}.supabase.co/rest/v1
+    variables:
+      projectRef:
+        default: intern-boss
+        description: Supabase project ref (หากต้องการเปลี่ยนให้ปรับค่านี้)
 paths:
   /reports:
     get:
-      summary: List diary reports
+      summary: รายการรายงานทั้งหมด
       operationId: listReports
+      tags:
+        - Reports
       responses:
-        "200":
-          description: Successful response
+        '200':
+          description: ส่งคืนรายการรายงานทั้งหมด
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Report"
-  /reports/{id}:
+                  $ref: '#/components/schemas/Report'
+              examples:
+                success:
+                  summary: ตัวอย่างการตอบกลับ
+                  value:
+                    - Document_id: 101
+                      report: 'Daily Standup'
+                      details: 'สรุปงานประจำวันที่ 10 พ.ย.'
+                      status: '1'
+                      date: '2025-11-10'
+                      UID:
+                        UID: 42
+                        name: 'Suda Chai'
+                        role: '0'
+                      deepLink: '/reports/101/view'
+                    - Document_id: 102
+                      report: 'Weekly Sync'
+                      details: null
+                      status: '0'
+                      date: '2025-11-09'
+                      UID:
+                        UID: 7
+                        name: 'Krit Phan'
+                        role: '2'
+                      deepLink: '/reports/102/view'
+  /reports/{documentId}:
     get:
-      summary: Get a specific report
-      operationId: getReport
+      summary: รายงานตาม Document ID
+      operationId: getReportById
+      tags:
+        - Reports
       parameters:
-        - name: id
+        - name: documentId
           in: path
           required: true
+          description: รหัสรายงาน (Document_id)
           schema:
-            type: string
+            type: integer
       responses:
-        "200":
-          description: Successful response
+        '200':
+          description: ส่งคืนรายละเอียดรายงานที่ตรงกับ Document_id
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Report"
+                $ref: '#/components/schemas/Report'
+              examples:
+                success:
+                  summary: ตัวอย่างการตอบกลับ
+                  value:
+                    Document_id: 101
+                    report: 'Daily Standup'
+                    details: 'สรุปงานประจำวันที่ 10 พ.ย.'
+                    status: '1'
+                    date: '2025-11-10'
+                    UID:
+                      UID: 42
+                      name: 'Suda Chai'
+                      role: '0'
+                    deepLink: '/reports/101/view'
+        '404':
+          description: ไม่พบรายงานตาม Document_id ที่ระบุ
 components:
   schemas:
     Report:
       type: object
       required:
-        - id
-        - title
-        - createdAt
+        - Document_id
+        - report
+        - status
+        - date
+        - UID
       properties:
-        id:
+        Document_id:
+          type: integer
+          description: รหัสหลักของรายงาน
+        report:
           type: string
-        title:
+          description: ชื่อรายงานหรือหัวข้อสรุป
+        details:
           type: string
-        createdAt:
+          nullable: true
+          description: เนื้อหารายละเอียดเพิ่มเติมของรายงาน
+        status:
           type: string
-          format: date-time
+          description: สถานะรายงาน (0 = กำลังแก้ไข, 1 = เสร็จสิ้น)
+          enum:
+            - '0'
+            - '1'
+        date:
+          type: string
+          format: date
+          description: วันที่สร้างรายงาน (รูปแบบ ISO หรือ YYYY-MM-DD)
+        UID:
+          $ref: '#/components/schemas/User'
+        deepLink:
+          type: string
+          description: ลิงก์ภายในสำหรับเปิดดูรายงานในหน้าเว็บ
+    User:
+      type: object
+      required:
+        - UID
+        - name
+        - role
+      properties:
+        UID:
+          type: integer
+          description: รหัสผู้ใช้ที่สร้างรายงาน
+        name:
+          type: string
+          description: ชื่อผู้ใช้ที่สร้างรายงาน
+        role:
+          type: string
+          description: รหัสบทบาท (0 = Frontend, 1 = Backend, 2 = UX/UI)
+          enum:
+            - '0'
+            - '1'
+            - '2'
+  securitySchemes:
+    supabaseApiKey:
+      type: apiKey
+      in: header
+      name: apikey
+      description: Supabase anon/service role key
+    supabaseBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: ใช้ค่าเดียวกับ apikey (เช่น anon key) หรือ service role
+security:
+  - supabaseApiKey: []
+    supabaseBearer: []
 
