@@ -285,8 +285,8 @@ export default function DocumentsListPage() {
                                 {loading
                                     ? 'กำลังบันทึก...'
                                     : isEditing
-                                        ? '💾 บันทึก'
-                                        : '✏️ แก้ไข'}
+                                        ? ' บันทึก'
+                                        : ' แก้ไข'}
                             </button>
 
                         </>
@@ -305,7 +305,7 @@ export default function DocumentsListPage() {
                 </div>
             </div>
 
-            
+
 
             {/* --- 9b. "ตาราง" ที่เปลี่ยนเป็นการ์ด --- */}
             {documents.length === 0 ? ( // (ถ้าไม่มีข้อมูล)
@@ -444,11 +444,11 @@ export default function DocumentsListPage() {
                                         ) : (
                                             <>
                                                 <div className="flex items-center text-sm font-medium text-gray-800">
-                                                    <span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '1' ? 'bg-green-500' : 'bg-gray-300'}`}></span>
+                                                    <span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '1' ? 'bg-[#3FCF38]' : 'bg-gray-300'}`}></span>
                                                     เสร็จสิ้น
                                                 </div>
                                                 <div className="flex items-center text-sm font-medium text-gray-800">
-                                                    <span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '0' ? 'bg-gray-800' : 'bg-gray-300'}`}></span>
+                                                    <span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '0' ? 'bg-[#333333]' : 'bg-gray-300'}`}></span>
                                                     กำลังดำเนินงาน
                                                 </div>
                                             </>
