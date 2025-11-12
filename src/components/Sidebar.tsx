@@ -16,6 +16,15 @@ function LogoutIcon() {
     );
 }
 
+function CollapseIcon({ isExpanded }: { isExpanded: boolean }) {
+    // ไอคอนจะเปลี่ยนไปตามสถานะ isExpanded
+    const pathData = isExpanded
+        ? "M15 19l-7-7 7-7" // Arrow pointing left (to collapse)
+        : "M9 5l7 7-7 7";    // Arrow pointing right (to expand)
+    return (
+        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={pathData}></path></svg>
+    );
+}
 export default function Sidebar() {
     const router = useRouter();
     const users = [
@@ -67,18 +76,22 @@ export default function Sidebar() {
     return (
         <>
             {/* ----------------------------------------------- */}
-            {/* 1. MOBILE TOGGLE BUTTON (แสดงในจอเล็กเท่านั้น) */}
+            {/* 1. MOBILE TOGGLE BUTTON (แสดงเมื่อ Sidebar ปิด) */}
             {/* ----------------------------------------------- */}
-            <button
-                onClick={toggleMobile}
-                type="button"
-                className="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 fixed top-0 left-0 z-50"
-            >
-                <span className="sr-only">Open sidebar</span>
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path clipRule="evenodd" fillRule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
-                </svg>
-            </button>
+            {!isMobileOpen && (
+                <button
+                    onClick={toggleMobile}
+                    type="button"
+                    className="inline-flex items-center p-2 mt-2 ms-3 text-sm text-gray-500 rounded-lg sm:hidden hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 fixed top-0 left-0 z-50"
+                >
+                    <>
+                        <span className="sr-only">Open sidebar</span>
+                        <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path clipRule="evenodd" fillRule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
+                        </svg>
+                    </>
+                </button>
+            )}
 
             {/* ----------------------------------------------- */}
             {/* 2. ASIDE SIDEBAR (Desktop Push & Collapse) */}
@@ -90,121 +103,125 @@ export default function Sidebar() {
                            ${desktopWidthClass}`} // ควบคุมความกว้าง
                 aria-label="Sidebar"
             >
-                <div className="h-full px-3 py-4 overflow-y-auto bg-[#333333] flex flex-col">
+                <div className="h-full px-3 py-2 overflow-y-auto bg-[#333333] flex flex-col">
 
-                    {/* **Desktop Collapse Button** */}
-
-
-                    {/* **Mobile Close Button** */}
-                    {isMobileOpen && (
-                        <button onClick={toggleMobile}
-                            type="button"
-                            title="Close sidebar"
-                            aria-label="Close sidebar"
-                            className="p-2 sm:hidden text-gray-500 float-right hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
-                            <span className="sr-only">Close sidebar</span>
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    {/* --- Header ของ Sidebar (ปุ่มย้อนกลับ และ ปุ่มปิด Mobile) --- */}
+                    <div className="flex items-center justify-between mb-4">
+                        <button
+                            onClick={() => router.push('/')}
+                            className="p-2 text-white rounded-lg hover:bg-gray-700 group flex items-center"
+                            title="Back to Home"
+                        >
+                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                            {isExpanded && (
+                                <span className="ms-3 font-bold"></span>
+                            )}
                         </button>
-                    )}
 
-                    {/* --- 3. ‼️ ปุ่มย้อนกลับ (ใหม่) ‼️ --- */}
-                    <button
-                        onClick={() => router.push('/')} // 👈 4. สั่งให้กลับไปหน้า Home (หน้า 3 ปุ่ม)
-                        className="p-4 text-white rounded-lg hover:bg-gray-700 group flex items-center"
-                        title="Back to Home"
-                    >
-                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                        {isExpanded && (
-                            <span className="ms-3 font-bold">Back</span>
+                        {/* **Mobile Close Button** (แสดงเฉพาะตอน Sidebar เปิด) */}
+                        {isMobileOpen && (
+                            <button onClick={toggleMobile}
+                                type="button"
+                                title="Close sidebar"
+                                className="p-2 sm:hidden text-gray-400 hover:text-white">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
                         )}
-                    </button>
+                    </div>
+
+                    <ul className="space-y-2 flex-grow flex flex-col justify-center ">
+                        {users.map((user) => (
+                            <li key={user.id} className='pb-2'>
+                                <Link
+                                    // ‼️ นี่คือส่วนที่ "เด้งกลับไป login ใหม่" ‼️
+                                    href={`/login?user=${user.id}`}
+                                    className={`flex flex-col items-center justify-center text-white rounded-lg group transition-all duration-300
+                                        ${isExpanded ? 'p-10' : 'p-2'}
+                                        ${
+                                        // 8. เช็คว่า User คนนี้ Active หรือไม่
+                                        activeUser === user.id
+                                            ? 'bg-neutral-900'
+                                            : 'hover:bg-gray-700'
+                                        }
+                                    `}
+                                >
+                                    {/* --- วงกลม Avatar (ปรับขนาดตาม isExpanded) --- */}
+                                    <div
+                                        className={`rounded-full shrink-0 flex items-center justify-center transition-all duration-300 ${isExpanded ? 'w-16 h-16' : 'w-12 h-12'} ${activeUser === user.id ? 'bg-black' : user.color}`}
+                                    >
+                                        <svg className={`text-white transition-all duration-300 ${isExpanded ? 'w-10 h-10' : 'w-8 h-8'}`} fill="currentColor" viewBox="0 0 24 24">
+
+                                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+
+                                        </svg>
+                                    </div>
+
+                                    {/* (ชื่อ) */}
+                                    {isExpanded && (
+                                        <span className="mt-4 text-xl font-bold">{user.name}</span>
+                                    )}
+                                </Link>
+                            </li>
+                        ))}
+
+                    </ul>
+                    {/* --- 2. ‼️ ปุ่ม Logout (อัปเดต) ‼️ --- */}
+                    {/* 👈 1. เพิ่มเงื่อนไข: "ถ้าอยู่ที่หน้า /reports เท่านั้น" */}
+                    {pathname.startsWith('/reports') && (
+                        <div className="mt-auto pt-4 border-t border-gray-700">
+                            <button
+                                onClick={() => {
+                                    localStorage.removeItem('currentUser');
+                                    router.push('/');
+                                }}
+                                className="flex items-center p-4 text-white rounded-lg group hover:bg-gray-700 w-full"
+                                title="Logout"
+                            >
+                                <LogoutIcon />
+                                {isExpanded && (
+                                    <span className="ms-3 font-bold">Logout</span>
+                                )}
+                            </button>
+                        </div>
+                    )} {/* 👈 2. ปิดวงเล็บเงื่อนไข */}
                     {/* ---------------------------------- */}
 
-                    {/* <ul className={`space-y-2 flex-grow flex flex-col ${
-                        // ถ้าอยู่ที่หน้า '/reports' -> ไม่ต้องทำอะไร (อยู่ด้านบน)
-                        // ถ้าอยู่ที่หน้าอื่น (เช่น '/login') -> ให้อยู่ 'ตรงกลาง'
-                        pathname.startsWith('/reports') ? '' : 'justify-center'
-                        }`}> */}
-
-                    <ul className={`space-y-2 flex-grow flex flex-col  }`}>
-                    {users.map((user) => (
-                        <li key={user.id}>
-                            <Link
-                                // ‼️ นี่คือส่วนที่ "เด้งกลับไป login ใหม่" ‼️
-                                href={`/login?user=${user.id}`}
-                                className={`flex items-center p-10 text-white rounded-lg group
-                                        ${
-                                    // 8. เช็คว่า User คนนี้ Active หรือไม่
-                                    activeUser === user.id
-                                        ? 'bg-neutral-900'
-                                        : 'hover:bg-gray-700'
-                                    }
-                                    `}
-                            >
-                                {/* วงกลม (เราใช้สีจาก State แทน) */}
-                                <div
-                                    className={`w-12 h-12 ${activeUser === user.id ? 'bg-black' : user.color // 👈 ใช้สีชมพู (Active) หรือสีชมพูเดิม (Inactive)
-                                        } rounded-full shrink-0 flex items-center justify-center`}
-                                >
-                                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-
-                                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-
-                                    </svg>
-                                </div>
-
-                                {/* (ชื่อ) */}
-                                {isExpanded && (
-                                    <span className="ms-3 font-bold">{user.name}</span>
-                                )}
-                            </Link>
-                        </li>
-                    ))}
-
-                </ul>
-                {/* --- 2. ‼️ ปุ่ม Logout (อัปเดต) ‼️ --- */}
-                {/* 👈 1. เพิ่มเงื่อนไข: "ถ้าอยู่ที่หน้า /reports เท่านั้น" */}
-                {pathname.startsWith('/reports') && (
-                    <div className="mt-auto pt-4 border-t border-gray-700">
+                    {/* --- 3. ‼️ ปุ่ม Collapse/Expand (สำหรับ Desktop) ‼️ --- */}
+                    <div className="hidden sm:block mt-2">
                         <button
-                            onClick={() => {
-                                localStorage.removeItem('currentUser');
-                                router.push('/');
-                            }}
+                            onClick={toggleDesktop}
                             className="flex items-center p-4 text-white rounded-lg group hover:bg-gray-700 w-full"
-                            title="Logout"
+                            title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
                         >
-                            <LogoutIcon />
+                            <CollapseIcon isExpanded={isExpanded} />
                             {isExpanded && (
-                                <span className="ms-3 font-bold">Logout</span>
+                                <span className="ms-3 font-bold">Collapse</span>
                             )}
                         </button>
                     </div>
-                )} {/* 👈 2. ปิดวงเล็บเงื่อนไข */}
-                {/* ---------------------------------- */}
-            </div>
-        </aside >
+                </div>
+            </aside >
 
-            {/* ----------------------------------------------- */ }
-    {/* 3. MOBILE OVERLAY & STATE TRACKER */ }
-    {/* ----------------------------------------------- */ }
-    {
-        isMobileOpen && (
+            {/* ----------------------------------------------- */}
+            {/* 3. MOBILE OVERLAY & STATE TRACKER */}
+            {/* ----------------------------------------------- */}
+            {
+                isMobileOpen && (
+                    <div
+                        onClick={toggleMobile}
+                        className="fixed inset-0 z-30 bg-gray-900 opacity-50 sm:hidden"
+                    ></div>
+                )
+            }
+
+            {/* Hidden Div สำหรับส่งสถานะไป MainContentWrapper */}
             <div
-                onClick={toggleMobile}
-                className="fixed inset-0 z-30 bg-gray-900 opacity-50 sm:hidden"
+                id="sidebar-width-tracker"
+                data-sidebar-expanded={isExpanded}
+                className="hidden"
             ></div>
-        )
-    }
-
-    {/* Hidden Div สำหรับส่งสถานะไป MainContentWrapper */ }
-    <div
-        id="sidebar-width-tracker"
-        data-sidebar-expanded={isExpanded}
-        className="hidden"
-    ></div>
         </>
     );
 }
