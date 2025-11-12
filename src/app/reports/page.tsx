@@ -127,6 +127,7 @@ export default function DocumentsListPage() {
             console.log("✅ Save successful:", result);
             alert('บันทึกข้อมูลเรียบร้อย!');
             setEditingRowIds([]);
+            setIsEditing(false); // ‼️ เพิ่มบรรทัดนี้: ปิดโหมดแก้ไขหลังบันทึกสำเร็จ
 
             // ดึงข้อมูลใหม่
             if (currentUser) {
@@ -256,16 +257,18 @@ export default function DocumentsListPage() {
                 </h1>
                 <div className="flex flex-wrap gap-2">
 
-                    {editingRowIds.length > 0 ? (
+                    {isEditing ? (
                         <>
+                            {/* --- ปุ่มบันทึก (เมื่ออยู่ในโหมดแก้ไข) --- */}
                             <button
                                 type="button"
-                                onClick={handleSaveReports}
+                                onClick={handleEditClick} // ‼️ เปลี่ยนมาใช้ handleEditClick
                                 disabled={loading}
                                 className="bg-[#333333] text-white px-5 py-2 rounded-lg hover:bg-black transition text-sm font-medium"
                             >
-                                บันทึกการแก้ไข
+                                {loading ? 'กำลังบันทึก...' : '💾 บันทึก'}
                             </button>
+                            {/* --- ปุ่มยกเลิก (เมื่ออยู่ในโหมดแก้ไข) --- */}
                             <button
                                 type="button"
                                 onClick={handleCancelEdit}
@@ -275,28 +278,22 @@ export default function DocumentsListPage() {
                             </button>
                         </>
                     ) : (
-                        <>
-                            <button
-                                type="button"
-                                className="bg-[#6e6e6e] text-white px-5 py-2 rounded-lg hover:bg-[#5c5a5a] transition text-sm font-medium"
-                                onClick={handleEditClick}
-                                disabled={loading}
-                            >
-                                {loading
-                                    ? 'กำลังบันทึก...'
-                                    : isEditing
-                                        ? ' บันทึก'
-                                        : ' แก้ไข'}
-                            </button>
-
-                        </>
+                        // --- ปุ่มแก้ไข (เมื่อไม่ได้อยู่ในโหมดแก้ไข) ---
+                        <button
+                            type="button"
+                            onClick={handleEditClick}
+                            disabled={loading}
+                            className="bg-[#6e6e6e] text-white px-5 py-2 rounded-lg hover:bg-[#5c5a5a] transition text-sm font-medium"
+                        >
+                            ✏️ แก้ไข
+                        </button>
                     )}
 
                     {/* ‼️ ปุ่ม "เพิ่มรายการ" */}
                     <button
                         type="button"
-                        onClick={handleAddNewRow}
-                        disabled={loading || editingRowIds.length > 0}
+                        onClick={handleAddNewRow} // ‼️ เปลี่ยนเงื่อนไข disabled
+                        disabled={loading || isEditing}
                         className="bg-[#625E5E] text-white px-5 py-2 rounded-lg hover:bg-[#5c5a5a] transition text-sm font-medium disabled:opacity-50"
                     >
                         + เพิ่มรายการ
