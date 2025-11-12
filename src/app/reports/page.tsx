@@ -210,11 +210,11 @@ export default function DocumentsListPage() {
     // (หน้า Loading - เหมือนเดิม)
     if (loading || !currentUser) {
         return (
-            <div className="ml-64 mr-8 my-8 p-4">
-                <div className="flex justify-between items-center mb-6 p-8">
+            <div className="my-8">
+                <div className="flex justify-between items-center mb-6">
                     <h1 className="text-3xl font-bold text-gray-800">Loading...</h1>
                 </div>
-                <div className="bg-white rounded-lg shadow-lg p-12 text-center mx-8">
+                <div className="bg-white rounded-lg shadow-lg p-12 text-center">
                     <p className="text-gray-500 text-lg">กำลังดึงข้อมูล...</p>
                 </div>
             </div>
@@ -245,16 +245,16 @@ export default function DocumentsListPage() {
         setIsEditing(true);
     };
     return (
-        <div className="ml-64 mr-8 my-8 p-4">
+        <div className="my-8">
             {/* --- 9a. Header (หัวข้อและปุ่ม) --- */}
-            <div className="flex justify-between items-center mb-6 p-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <h1 className="text-3xl font-bold text-gray-800">
                     แบบบันทึกการปฏิบัติงาน
                     <span className="text-xl text-gray-500 font-normal ml-2">
                         (ของ {currentUser.name})
                     </span>
                 </h1>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
 
                     {editingRowIds.length > 0 ? (
                         <>
@@ -305,44 +305,49 @@ export default function DocumentsListPage() {
                 </div>
             </div>
 
+            
+
             {/* --- 9b. "ตาราง" ที่เปลี่ยนเป็นการ์ด --- */}
-            {documents.length === 0 ? (
-                // (ถ้าไม่มีข้อมูล)
+            {documents.length === 0 ? ( // (ถ้าไม่มีข้อมูล)
                 <div className="bg-white rounded-lg shadow-lg p-12 text-center mx-8">
                     <p className="text-2xl text-gray-500">✅ ไม่พบรายงาน</p>
                     <p className="text-sm text-gray-500 mt-2">คุณยังไม่ได้สร้างรายงานใดๆ</p>
                 </div>
-            ) : (
-                // (ถ้ามีข้อมูล)
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden mx-8">
-
-                    {/* 1. Card Header (หัวตาราง) */}
-                    <div className="grid grid-cols-10 gap-4 p-6 border-b bg-gray-50">
-                        <div className="col-span-2 text-sm font-bold text-gray-700 flex items-center"><DateIcon /> Date</div>
-                        <div className="col-span-3 text-sm font-bold text-gray-700 flex items-center"><GoingOnIcon /> Going on</div>
-                        <div className="col-span-3 text-sm font-bold text-gray-700 flex items-center"><NextFocusIcon /> Next Focus</div>
-                        <div className="col-span-2 text-sm font-bold text-gray-700 flex items-center"><StatusIcon /> Status</div>
+            ) : ( // (ถ้ามีข้อมูล)
+                <div className="mx-auto">
+                    {/* --- Table Header (แสดงเฉพาะจอใหญ่) --- */}
+                    <div className="hidden md:grid md:grid-cols-10 gap-4 p-6 border-b bg-gray-50 rounded-t-lg">
+                        <div className="md:col-span-2 text-sm font-bold text-gray-700 flex items-center ">
+                            <DateIcon /> Date
+                        </div>
+                        <div className="md:col-span-3 text-sm font-bold text-gray-700 flex items-center">
+                            <GoingOnIcon /> Going on
+                        </div>
+                        <div className="md:col-span-3 text-sm font-bold text-gray-700 flex items-center">
+                            <NextFocusIcon /> Next Focus
+                        </div>
+                        <div className="md:col-span-2 text-sm font-bold text-gray-700 flex items-center">
+                            <StatusIcon /> Status
+                        </div>
                     </div>
-
-                    {/* 2. Card Body (ข้อมูล) */}
-                    {/* ‼️ ลบ "แถวใหม่" (bg-blue-50) ที่แยกไว้ทิ้งไป ‼️ */}
-                    {/* (เพราะตอนนี้ "แถวใหม่" อยู่ใน documents.map() แล้ว) */}
-
-                    <div className="divide-y divide-gray-100">
+                    {/* --- Responsive Body: Cards on Mobile, Table Rows on Desktop --- */}
+                    <div className="space-y-4 md:space-y-0">
                         {documents.map((doc) => {
                             const formattedDate = new Date(doc.date).toISOString().split('T')[0];
 
                             // ‼️ ตรวจสอบว่าแถวนี้อยู่ใน editingRowIds หรือไม่
                             const isRowEditing = editingRowIds.includes(doc.Document_id);
 
+                            // --- Card/Row Container ---
                             return (
-                                <div key={doc.Document_id} className={`grid grid-cols-10 gap-4 p-6 items-start ${
-                                    // 👈 ‼️ ไฮไลท์แถวใหม่ (ชั่วคราว) ‼️
-                                    doc.Document_id < 0 ? 'bg-blue-50' : ''
-                                    }`}>
-
-                                    {/* --- 1. ปฏิทิน (Date) --- */}
-                                    <div className="col-span-2 relative group">
+                                <div key={doc.Document_id} className={`
+                                    bg-white md:grid md:grid-cols-10 md:gap-4 md:items-start 
+                                    p-6 rounded-lg shadow-md md:shadow-none md:rounded-none md:border-b
+                                    ${doc.Document_id < 0 ? 'bg-blue-50 ring-2 ring-blue-300' : 'border-gray-200'}`}>
+                                    {/* --- Date Column --- */}
+                                    <div className="md:col-span-2 relative group mb-4 md:mb-0">
+                                        {/* Mobile Label */}
+                                        <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><DateIcon /> Date</label>
                                         {isRowEditing ? (
                                             <>
                                                 <input
@@ -363,8 +368,10 @@ export default function DocumentsListPage() {
                                         )}
                                     </div>
 
-                                    {/* --- 2. Textbox (Going on) --- */}
-                                    <div className="col-span-3 relative group">
+                                    {/* --- Going on Column --- */}
+                                    <div className="md:col-span-3 relative group mb-4 md:mb-0">
+                                        {/* Mobile Label */}
+                                        <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><GoingOnIcon /> Going on</label>
                                         {isRowEditing ? (
                                             <>
                                                 <textarea
@@ -383,8 +390,10 @@ export default function DocumentsListPage() {
                                         )}
                                     </div>
 
-                                    {/* --- 3. Next Focus --- */}
-                                    <div className="col-span-3 relative group">
+                                    {/* --- Next Focus Column --- */}
+                                    <div className="md:col-span-3 relative group mb-4 md:mb-0">
+                                        {/* Mobile Label */}
+                                        <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><NextFocusIcon /> Next Focus</label>
                                         {isRowEditing ? (
                                             <>
                                                 <textarea
@@ -403,11 +412,12 @@ export default function DocumentsListPage() {
                                         )}
                                     </div>
 
-                                    {/* --- 4. Radio/Dots (Status) --- */}
-                                    <div className="col-span-2 space-y-3 pl-2 relative">
+                                    {/* --- Status Column --- */}
+                                    <div className="md:col-span-2 md:space-y-3 md:pl-2 relative">
+                                        {/* Mobile Label */}
+                                        <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><StatusIcon /> Status</label>
                                         {isRowEditing ? (
                                             <>
-                                                {/* ‼️ โหมดแก้ไข (Radio) - (นี่คือส่วนที่ "แถวใหม่" จะได้รับ) ‼️ */}
                                                 <label className="flex items-center text-sm cursor-pointer font-normal text-gray-600">
                                                     <input
                                                         type="radio"
@@ -433,26 +443,21 @@ export default function DocumentsListPage() {
                                             </>
                                         ) : (
                                             <>
-                                                {/* โหมดดู (จุดสี) */}
                                                 <div className="flex items-center text-sm font-medium text-gray-800">
-                                                    <span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '1' ? 'bg-green-500' : 'bg-gray-300'
-                                                        }`}></span>
+                                                    <span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '1' ? 'bg-green-500' : 'bg-gray-300'}`}></span>
                                                     เสร็จสิ้น
                                                 </div>
                                                 <div className="flex items-center text-sm font-medium text-gray-800">
-                                                    <span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '0' ? 'bg-gray-800' : 'bg-gray-300'
-                                                        }`}></span>
+                                                    <span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '0' ? 'bg-gray-800' : 'bg-gray-300'}`}></span>
                                                     กำลังดำเนินงาน
                                                 </div>
                                             </>
                                         )}
                                     </div>
-
                                 </div>
                             );
                         })}
                     </div>
-
                 </div>
             )}
         </div>

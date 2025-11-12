@@ -13,26 +13,27 @@ const users = [
   { id: 'nip', name: 'Nip' },
   { id: 'pon', name: 'Pon' },
 ];
-
 export default function HomePage() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-white text-gray-800 pb-90">
-      
-      <h1 className="text-4xl font-bold mb-4">
+    <main className="flex flex-col items-center  min-h-screen 
+                 bg-white text-gray-800 justify-center " style={{ paddingBottom: 'var(--spacing-lg)' }}>
+
+      <h1 className="text-4xl font-bold mb-4 text-center pt-12" style={{ fontSize: 'var(--font-size-3xl)', paddingBottom: 'var(--spacing-md)' }}>
         แบบบันทึกการปฏิบัติงาน
       </h1>
-      <h2 className="text-2xl text-gray-600 mb-12">
+      <h2 className="text-xl sm:text-2xl text-gray-600 mb-8 sm:mb-12 text-center"
+        style={{ fontSize: 'var(--font-size-lg)', paddingBottom: 'var(--spacing-sm)' }}>
         โปรดเลือกผู้ใช้งาน
       </h2>
 
-      <div className="flex flex-col sm:flex-row gap-8">
+      <div className="flex flex-wrap justify-center gap-4 sm:gap-8 max-w-4xl mx-auto">
         {users.map((user) => (
-          
+
           // ‼️ สังเกตการเปลี่ยนแปลงที่นี่ ‼️
           // เรา Link ไปหน้า /login และส่ง "Query Parameter"
-          <Link 
+          <Link
             href={`/login?user=${user.id}`} // 👈 เปลี่ยนจาก /login/boss เป็น /login?user=boss
-            key={user.id} 
+            key={user.id}
             className="group"
           >
             <div className="bg-[#333333] text-white w-64 h-64 rounded-2xl

@@ -1,8 +1,7 @@
 'use client';
 import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
-import MainContentWrapper from '@/components/MainContentWrapper';
+
 
 // ไอคอนรูปคน
 const UserIcon = () => (
@@ -116,8 +115,10 @@ function LoginForm() {
 // --- 8. Export Component หลัก ห่อด้วย Suspense ---
 export default function LoginPage() {
     return (
+
         <Suspense fallback={<div>Loading User...</div>}>
             <LoginForm />
         </Suspense>
+
     );
 }
