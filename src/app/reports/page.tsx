@@ -418,17 +418,7 @@ export default function DocumentsListPage() {
                                         <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><StatusIcon /> Status</label>
                                         {isRowEditing ? (
                                             <>
-                                                <label className="flex items-center text-sm cursor-pointer font-normal text-gray-600">
-                                                    <input
-                                                        type="radio"
-                                                        name={`status-${doc.Document_id}`}
-                                                        value="0"
-                                                        checked={doc.status === '0'}
-                                                        onChange={(e) => handleInputChange(doc.Document_id, 'status', e.target.value)}
-                                                        className="mr-2 h-4 w-4 text-gray-600 border-gray-300 focus:ring-gray-500"
-                                                    />
-                                                    กำลังดำเนินงาน
-                                                </label>
+
                                                 <label className="flex items-center text-sm cursor-pointer font-normal text-gray-600">
                                                     <input
                                                         type="radio"
@@ -439,6 +429,17 @@ export default function DocumentsListPage() {
                                                         className="mr-2 h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"
                                                     />
                                                     เสร็จสิ้น
+                                                </label>
+                                                <label className="flex items-center text-sm cursor-pointer font-normal text-gray-600">
+                                                    <input
+                                                        type="radio"
+                                                        name={`status-${doc.Document_id}`}
+                                                        value="0"
+                                                        checked={doc.status === '0'}
+                                                        onChange={(e) => handleInputChange(doc.Document_id, 'status', e.target.value)}
+                                                        className="mr-2 h-4 w-4 text-gray-600 border-gray-300 focus:ring-gray-500"
+                                                    />
+                                                    กำลังดำเนินงาน
                                                 </label>
                                             </>
                                         ) : (
