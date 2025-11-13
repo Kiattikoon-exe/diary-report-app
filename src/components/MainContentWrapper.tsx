@@ -1,7 +1,13 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 
-export default function MainContentWrapper({ children }: { children: React.ReactNode; }) {
+interface MainContentWrapperProps {
+    children: React.ReactNode;
+    className?: string;
+}
+
+
+export default function MainContentWrapper({ children, className = '' }: MainContentWrapperProps) {
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
     useEffect(() => {
@@ -34,7 +40,8 @@ export default function MainContentWrapper({ children }: { children: React.React
     const marginLeftClass = isSidebarExpanded ? 'sm:ml-64' : 'sm:ml-20';
 
     return (
-        <main className={`flex-grow p-4 w-full transition-all duration-300 ${marginLeftClass} `}>
+        <main className={`w-full relative rounded-3xl bg-gray-50 transition-all duration-300 flex flex-col p-8 ${className}`}>
+
             {children}
         </main>
     );

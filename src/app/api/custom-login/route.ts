@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     if (error) {
       console.error("Supabase query error:", error);
       return NextResponse.json(
-        { error: "User not found or database error" },
+        { error: "*ไม่พบผู้ใช้ในระบบ" },
         { status: 404 }
       );
     }
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     } else {
       // ถ้ารหัสผิด
       console.log("Invalid password for:", name);
-      return NextResponse.json({ error: "Invalid password" }, { status: 401 });
+      return NextResponse.json({ error: "*รหัสผ่านไม่ถูกต้อง" }, { status: 401 });
     }
   } catch (err) {
     console.error("API route error:", err);
