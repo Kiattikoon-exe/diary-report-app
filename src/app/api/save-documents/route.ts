@@ -6,16 +6,7 @@ import { supabase } from "@/utils/supabase/client";
 // และเพิ่ม options เพื่อให้ bypass RLS
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    db: {
-      schema: "Timesheet", // 👈 กำหนด default schema
-    },
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function POST(req: Request) {
@@ -41,41 +32,41 @@ export async function POST(req: Request) {
       console.log("📄 Raw document:", doc);
 
       // ตรวจสอบว่ามีข้อมูลครบหรือไม่
-      if (!doc.UID) {
-        console.error("❌ Missing UID:", doc);
+      if (!doc.user_id) {
+        console.error("❌ Missing user_id:", doc);
         return NextResponse.json(
-          { error: "Missing UID in document", document: doc },
+          { error: "Missing user_id in document", document: doc },
           { status: 400 }
         );
       }
 
       // แยก docData สำหรับ INSERT และ UPDATE
       const docDataForInsert = {
-        UID: doc.UID,
+        user_id: doc.user_id,
         report: doc.report || "",
-        details: doc.details || "",
+        
         nextfocus: doc.nextfocus || "",
         status: doc.status || "",
         date: doc.date || new Date().toISOString().split("T")[0],
       };
 
-      // สำหรับ UPDATE ไม่ต้องส่ง UID (เพราะไม่ควรเปลี่ยน)
+      // สำหรับ UPDATE ไม่ต้องส่ง user_id (เพราะไม่ควรเปลี่ยน)
       const docDataForUpdate = {
         report: doc.report || "",
-        details: doc.details || "",
+        
         nextfocus: doc.nextfocus || "",
         status: doc.status || "",
         date: doc.date || new Date().toISOString().split("T")[0],
       };
 
       console.log("📄 Processing document:", {
-        id: doc.Document_id,
+        id: doc.document_id,
         dataForInsert: docDataForInsert,
         dataForUpdate: docDataForUpdate,
       });
 
-      if (doc.Document_id < 0) {
-        // INSERT - ใช้ docDataForInsert (มี UID)
+      if (doc.document_id < 0) {
+        // INSERT - ใช้ docDataForInsert (มี user_id)
         console.log("➕ Attempting INSERT:", docDataForInsert);
 
         const { data, error } = await supabaseAdmin
@@ -88,7 +79,7 @@ export async function POST(req: Request) {
 
           console.log("🔄 Retrying with explicit schema...");
           const { data: data2, error: error2 } = await supabaseAdmin
-            .schema("Timesheet")
+
             .from("documents")
             .insert(docDataForInsert)
             .select();
@@ -109,12 +100,12 @@ export async function POST(req: Request) {
         console.log("✅ INSERT Success:", data);
         results.push({ action: "insert", data });
       } else {
-        // UPDATE - ใช้ docDataForUpdate (ไม่มี UID)
-        console.log("✏️ Attempting UPDATE:", doc.Document_id, docDataForUpdate);
+        // UPDATE - ใช้ docDataForUpdate (ไม่มี user_id)
+        console.log("✏️ Attempting UPDATE:", doc.document_id, docDataForUpdate);
         const { data, error } = await supabaseAdmin
           .from("documents")
           .update(docDataForUpdate)
-          .eq("Document_id", doc.Document_id)
+          .eq("document_id", doc.document_id)
           .select();
 
         if (error) {

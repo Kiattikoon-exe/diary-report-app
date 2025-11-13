@@ -5,16 +5,7 @@ import { supabase } from "@/utils/supabase/client";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    db: {
-      schema: "Timesheet", // 👈 กำหนด default schema
-    },
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function POST(req: Request) {
@@ -29,13 +20,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Query ไปยังตาราง 'user' ใน 'Timesheet'
+    // 2. Query ไปยังตาราง 'user' 
     const { data, error } = await supabaseAdmin
 
-      .schema("Timesheet")
-      .from("user")
-      .select("UID, PASSWORD, NAME")
-      .eq("NAME", name)
+      
+      .from("users")
+      .select("id, password, username, role, position, firstname, lastname") // 👈 เพิ่ม field ที่ต้องใช้
+      .eq("username", name)
       .single();
     // 👇 Debug: แสดงผลลัพธ์จาก Supabase
     console.log("Supabase query result:", { data, error });
@@ -55,28 +46,39 @@ export async function POST(req: Request) {
     // 👇 Debug: แสดงการเปรียบเทียบรหัสผ่าน
     console.log("Password comparison:", {
       provided: password,
-      stored: data.PASSWORD,
-      match: data.PASSWORD === password,
+      stored: data.password,
+      match: data.password === password,
     });
 
     /// 3. ตรวจสอบรหัสผ่าน (แปลงเป็น String ทั้งคู่เพื่อเปรียบเทียบ)
-    const storedPassword = String(data.PASSWORD);
+    const storedPassword = String(data.password);
     const providedPassword = String(password);
 
-    if (storedPassword === providedPassword && data.UID) {
+    if (storedPassword === providedPassword && data.id) {
       // ถ้าถูกต้อง
       console.log("Login successful for:", name);
+      // ✅ ส่งข้อมูล User ทั้งหมดกลับไปเลย (หน้าบ้านจะได้ไม่ต้อง query ซ้ำ)
       return NextResponse.json(
         {
           success: true,
-          user: { name: name, uid: data.UID },
+          user: {
+            id: data.id,
+            username: data.username,
+            role: data.role, // 👈 ส่ง role กลับไป
+            position: data.position, // 👈 ส่ง position กลับไป
+            firstname: data.firstname,
+            lastname: data.lastname,
+          },
         },
         { status: 200 }
       );
     } else {
       // ถ้ารหัสผิด
       console.log("Invalid password for:", name);
-      return NextResponse.json({ error: "*รหัสผ่านไม่ถูกต้อง" }, { status: 401 });
+      return NextResponse.json(
+        { error: "*รหัสผ่านไม่ถูกต้อง" },
+        { status: 401 }
+      );
     }
   } catch (err) {
     console.error("API route error:", err);
