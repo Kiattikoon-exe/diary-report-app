@@ -3,23 +3,23 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from '@/utils/supabase/client';
-// --- 1. TypeScript Interfaces (เหมือนเดิม) ---
+
+// --- 1. TypeScript Interfaces (ปรับตาม ERD) ---
 interface User {
-    NAME: string;
-    ROLE: string;
+    username: string; // 👈 แก้ไข (จาก NAME)
+    role: string;
 }
 
 interface DocumentItem {
-    Document_id: number; // ‼️ ID จริงจาก DB (จะ > 0) หรือ ID ชั่วคราว (จะ < 0)
+    document_id: number; // 👈 แก้ไข (จาก Document_id)
     report: string;
-    details: string | null;
     nextfocus: string;
     status: '0' | '1';
     date: string;
-    user: User;
-    UID: number;
+    users: User;      // 👈 แก้ไข (จาก user)
+    user_id: string;  // 👈 แก้ไข (จาก UID)
 }
 
 // --- ไอคอน (เหมือนเดิม) ---
@@ -45,41 +45,40 @@ export default function DocumentsListPage() {
 
     // --- 3. State ---
     const [documents, setDocuments] = useState<DocumentItem[]>([]);
-    const [currentUser, setCurrentUser] = useState<{ name: string; uid: number } | null>(null);
+    {/* ‼️ แก้ไข Type: user_id เป็น string (uuid) ‼️ */ }
+    const [currentUser, setCurrentUser] = useState<{ name: string; user_id: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [editingRowIds, setEditingRowIds] = useState<number[]>([]);
     const [newRowCounter, setNewRowCounter] = useState(0);
     const [isEditing, setIsEditing] = useState(false);
 
-    // (ฟังก์ชันดึงข้อมูล - เหมือนเดิม)
-    const fetchUserDocuments = async (uid: number) => {
+    // --- Fetch Data ---
+    const fetchUserDocuments = async (user_id: string) => {
         setLoading(true);
+        // ‼️ แก้ไข Query ให้ตรง ERD ‼️
         const { data, error } = await supabase
-            .schema('Timesheet')
             .from('documents')
-            .select(`UID,Document_id, report, details, nextfocus, status, date, user:UID ( NAME, ROLE )`)
-            .eq('UID', uid);
-        ///sadasdasd
-        // sd
+            .select(`document_id, report, nextfocus, status, date, user_id`) // 👈 ‼️ แก้ไข: ใช้ "users" แทน "users:user_id"
+            .eq('user_id', user_id);
+
         if (error) {
             console.error("Error fetching documents:", error);
         } else {
             const normalized = (data || []).map((d: any) => ({
-                Document_id: d.Document_id,
+                document_id: d.document_id, // 👈 แก้ไข
                 report: d.report,
-                details: d.details,
                 nextfocus: d.nextfocus,
                 status: d.status,
                 date: d.date,
-                UID: d.UID,
-                user: Array.isArray(d.user) ? (d.user[0] ?? { NAME: '', ROLE: '' }) : (d.user ?? { NAME: '', ROLE: '' })
+                user_id: d.user_id, // 👈 แก้ไข
+                users: d.users ? (Array.isArray(d.users) ? d.users[0] : d.users) : { username: currentUser?.name || '', role: '' }
             })) as DocumentItem[];
             setDocuments(normalized);
         }
         setLoading(false);
     };
 
-    // --- 4. useEffect (เหมือนเดิม) ---
+    // --- Effects ---
     useEffect(() => {
         const storedUser = localStorage.getItem('currentUser');
         if (!storedUser) {
@@ -87,164 +86,104 @@ export default function DocumentsListPage() {
             return;
         }
         const user = JSON.parse(storedUser);
-        setCurrentUser(user);
-        fetchUserDocuments(user.uid);
+        // ‼️ แก้ไขตรงนี้: เปลี่ยนจาก user.uid เป็น user.id
+        // และเปลี่ยน user.name เป็น user.firstname หรือ user.username ตามที่ API ส่งมา
+        if (user && user.id) {
+            setCurrentUser({
+                name: user.firstname || user.username, // API ส่ง firstname มา
+                user_id: user.id // ✅ แก้เป็น user.id
+            });
+            fetchUserDocuments(user.id); // ✅ แก้เป็น user.id
+        } else {
+            // กันเหนียว: ถ้าไม่มี ID ให้ดีดออกไป Login ใหม่
+            console.error("User ID not found in session");
+            router.push('/login');
+        }
     }, [router]);
 
-    // --- 5. ฟังก์ชัน "สมอง" (แก้ไข) ---ก
+    /// --- Handlers ---
     const handleInputChange = (docId: number, field: keyof DocumentItem, value: string) => {
-        setDocuments(prevDocs =>
-            prevDocs.map(doc =>
-                doc.Document_id === docId ? { ...doc, [field]: value } : doc
-            )
-        );
+        setDocuments(prev => prev.map(doc =>
+            // 👈 แก้ไข
+            doc.document_id === docId ? { ...doc, [field]: value } : doc
+        ));
     };
-    // ----- 6. ฟังก์ชัน "บันทึก" (อัปเกรด) -----
+
     const handleSaveReports = async () => {
         setLoading(true);
-
-        // กรองเอาเฉพาะแถวที่กำลังแก้ไข
-        const docsToSave = documents.filter(doc => editingRowIds.includes(doc.Document_id));
-
+        const docsToSave = documents.filter(doc => editingRowIds.includes(doc.document_id)); // 👈 แก้ไข
         console.log("📝 Documents to save:", docsToSave);
 
         try {
-            // เรียก API Route แทนการเรียก Supabase โดยตรง
             const response = await fetch('/api/save-documents/', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ documents: docsToSave }),
             });
 
             const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to save documents');
-            }
+            if (!response.ok) throw new Error(result.error || 'Failed to save');
 
             console.log("✅ Save successful:", result);
             alert('บันทึกข้อมูลเรียบร้อย!');
             setEditingRowIds([]);
-            setIsEditing(false); // ‼️ เพิ่มบรรทัดนี้: ปิดโหมดแก้ไขหลังบันทึกสำเร็จ
+            setIsEditing(false);
 
-            // ดึงข้อมูลใหม่
-            if (currentUser) {
-                await fetchUserDocuments(currentUser.uid);
-            }
+            if (currentUser) await fetchUserDocuments(currentUser.user_id);
         } catch (error) {
-            console.error("💥 Error saving documents:", error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            alert(`เกิดข้อผิดพลาด: ${errorMessage}`);
+            console.error("💥 Error saving:", error);
+            const msg = error instanceof Error ? error.message : 'Unknown error';
+            alert(`เกิดข้อผิดพลาด: ${msg}`);
         } finally {
             setLoading(false);
         }
     };
 
-    // --- 7. ฟังก์ชัน "ยกเลิก" (อัปเกรด) ---
     const handleCancelEdit = () => {
-        // ‼️ กรองแถวใหม่ (ชั่วคราว) ที่ยังไม่บันทึกทิ้งไป ‼️
-        setDocuments(prev => prev.filter(doc => doc.Document_id > 0));
-        setEditingRowIds([]); // 👈 ‼️ เพิ่มบรรทัดนี้ - ล้างการแก้ไขทั้งหมด
-        setIsEditing(false); // ปิดโหมดแก้ไข
+        setDocuments(prev => prev.filter(doc => doc.document_id > 0)); // 👈 แก้ไข
+        setEditingRowIds([]);
+        setIsEditing(false);
     };
 
-
-
-    // --- 8. ฟังก์ชัน "แก้ไข/บันทึก" (แบบ Toggle) ---
-    const handleEditClick = async () => {
-
-        // ถ้ายังไม่ได้อยู่ในโหมดแก้ไข → เปิดโหมดแก้ไข
+    const handleEditClick = () => {
         if (!isEditing) {
             setIsEditing(true);
-            // เปิดให้แก้ไขได้ทั้งหมด
-            const allIds = documents.map(doc => doc.Document_id);
-            setEditingRowIds(allIds);
-            return; // หยุดทำงาน ไม่บันทึก
-        }
-
-        // ถ้าอยู่ในโหมดแก้ไขอยู่แล้ว → บันทึกข้อมูล
-        setLoading(true);
-
-        // กรองเอาเฉพาะแถวที่มีการแก้ไข
-        const docsToSave = documents.filter(doc => editingRowIds.includes(doc.Document_id));
-
-        console.log("📝 Documents to save:", docsToSave);
-
-        try {
-            // เรียก API Route
-            const response = await fetch('/api/save-documents', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ documents: docsToSave }),
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to save documents');
-            }
-
-            console.log("✅ Save successful:", result);
-            alert('บันทึกข้อมูลเรียบร้อย!');
-
-            // ปิดโหมดแก้ไข
-            setIsEditing(false);
-            setEditingRowIds([]);
-
-            // ดึงข้อมูลใหม่
-            if (currentUser) {
-                await fetchUserDocuments(currentUser.uid);
-            }
-        } catch (error) {
-            console.error("💥 Error saving documents:", error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            alert(`เกิดข้อผิดพลาด: ${errorMessage}`);
-        } finally {
-            setLoading(false);
+            setEditingRowIds(documents.map(doc => doc.document_id)); // 👈 แก้ไข
+        } else {
+            handleSaveReports();
         }
     };
 
-    // (หน้า Loading - เหมือนเดิม)
+    const handleAddNewRow = () => {
+        if (!currentUser) return;
+        const tempId = -(newRowCounter + 1);
+        setNewRowCounter(prev => prev + 1);
+
+        const newDocument: DocumentItem = {
+            document_id: tempId, // 👈 แก้ไข
+            report: '',
+            nextfocus: '',
+            status: '0',
+            date: new Date().toISOString().split('T')[0],
+            user_id: currentUser.user_id, // 👈 แก้ไข
+            users: { username: currentUser.name, role: '' }
+        };
+
+        setDocuments(prev => [newDocument, ...prev]);
+        setEditingRowIds([tempId]);
+        setIsEditing(true);
+    };
+
+    // --- Render Loading ---
     if (loading || !currentUser) {
         return (
-            <div className="my-8">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800">Loading...</h1>
-                </div>
-                <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+            <div className="flex items-center justify-center w-full h-full p-4 sm:p-8">
+                <div className="bg-white rounded-lg shadow-lg p-12 text-center mx-8">
                     <p className="text-gray-500 text-lg">กำลังดึงข้อมูล...</p>
                 </div>
             </div>
         );
     }
-
-    // --- 9. ‼️ ฟังก์ชัน "เพิ่มแถวใหม่" (อัปเกรด) ‼️ ---
-    const handleAddNewRow = () => {
-        if (!currentUser) return;
-
-        const tempId = -(newRowCounter + 1);
-        setNewRowCounter(prev => prev + 1);
-
-        const newDocument: DocumentItem = {
-            Document_id: tempId,
-            report: '',
-            details: '',
-            nextfocus: '',
-            status: '0',
-            date: new Date().toISOString().split('T')[0],
-            UID: currentUser.uid,
-            user: { NAME: currentUser.name, ROLE: '' }
-        };
-
-        setDocuments(prev => [newDocument, ...prev]);
-        // 👈 ‼️ ตั้งให้แก้ไขเฉพาะแถวใหม่นี้เท่านั้น
-        setEditingRowIds([tempId]);
-        setIsEditing(true);
-    };
     return (
         <div className="my-8">
             {/* --- 9a. Header (หัวข้อและปุ่ม) --- */}
@@ -256,19 +195,16 @@ export default function DocumentsListPage() {
                     </span>
                 </h1>
                 <div className="flex flex-wrap gap-2">
-
                     {isEditing ? (
                         <>
-                            {/* --- ปุ่มบันทึก (เมื่ออยู่ในโหมดแก้ไข) --- */}
                             <button
                                 type="button"
-                                onClick={handleEditClick} // ‼️ เปลี่ยนมาใช้ handleEditClick
+                                onClick={handleEditClick}
                                 disabled={loading}
                                 className="bg-[#333333] text-white px-5 py-2 rounded-lg hover:bg-black transition text-sm font-medium"
                             >
                                 {loading ? 'กำลังบันทึก...' : '💾 บันทึก'}
                             </button>
-                            {/* --- ปุ่มยกเลิก (เมื่ออยู่ในโหมดแก้ไข) --- */}
                             <button
                                 type="button"
                                 onClick={handleCancelEdit}
@@ -278,7 +214,6 @@ export default function DocumentsListPage() {
                             </button>
                         </>
                     ) : (
-                        // --- ปุ่มแก้ไข (เมื่อไม่ได้อยู่ในโหมดแก้ไข) ---
                         <button
                             type="button"
                             onClick={handleEditClick}
@@ -289,10 +224,9 @@ export default function DocumentsListPage() {
                         </button>
                     )}
 
-                    {/* ‼️ ปุ่ม "เพิ่มรายการ" */}
                     <button
                         type="button"
-                        onClick={handleAddNewRow} // ‼️ เปลี่ยนเงื่อนไข disabled
+                        onClick={handleAddNewRow}
                         disabled={loading || isEditing}
                         className="bg-[#625E5E] text-white px-5 py-2 rounded-lg hover:bg-[#5c5a5a] transition text-sm font-medium disabled:opacity-50"
                     >
@@ -305,15 +239,15 @@ export default function DocumentsListPage() {
 
 
             {/* --- 9b. "ตาราง" ที่เปลี่ยนเป็นการ์ด --- */}
-            {documents.length === 0 ? ( // (ถ้าไม่มีข้อมูล)
+            {documents.length === 0 ? (
                 <div className="bg-white rounded-lg shadow-lg p-12 text-center mx-8">
                     <p className="text-2xl text-gray-500">✅ ไม่พบรายงาน</p>
                     <p className="text-sm text-gray-500 mt-2">คุณยังไม่ได้สร้างรายงานใดๆ</p>
                 </div>
-            ) : ( // (ถ้ามีข้อมูล)
+            ) : (
                 <div className="mx-auto">
                     {/* --- Table Header (แสดงเฉพาะจอใหญ่) --- */}
-                    <div className="hidden md:grid md:grid-cols-10 gap-4 p-6 border-b bg-gray-50 rounded-t-lg">
+                    <div className="hidden md:grid md:grid-cols-10 gap-4 p-6  bg-gray-50 rounded-t-lg">
                         <div className="md:col-span-2 text-sm font-bold text-gray-700 flex items-center ">
                             <DateIcon /> Date
                         </div>
@@ -331,32 +265,29 @@ export default function DocumentsListPage() {
                     <div className="space-y-4 md:space-y-0">
                         {documents.map((doc) => {
                             const formattedDate = new Date(doc.date).toISOString().split('T')[0];
-
-                            // ‼️ ตรวจสอบว่าแถวนี้อยู่ใน editingRowIds หรือไม่
-                            const isRowEditing = editingRowIds.includes(doc.Document_id);
+                            const isRowEditing = editingRowIds.includes(doc.document_id); // 👈 แก้ไข
 
                             // --- Card/Row Container ---
                             return (
-                                <div key={doc.Document_id} className={`
-                                    bg-white md:grid md:grid-cols-10 md:gap-4 md:items-start 
-                                    p-6 rounded-lg shadow-md md:shadow-none md:rounded-none md:border-b
-                                    ${doc.Document_id < 0 ? 'bg-blue-50 ring-2 ring-blue-300' : 'border-gray-200'}`}>
+                                <div key={doc.document_id} className={` 
+                                    bg-white md:grid md:grid-cols-10 md:gap-4 md:items-start 
+                                    p-6 rounded-lg shadow-md md:shadow-none md:rounded-none 
+                                    ${doc.document_id < 0 ? 'bg-blue-50 ring-2 ring-blue-300' : 'border-gray-200'}`}>
                                     {/* --- Date Column --- */}
                                     <div className="md:col-span-2 relative group mb-4 md:mb-0">
-                                        {/* Mobile Label */}
                                         <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><DateIcon /> Date</label>
                                         {isRowEditing ? (
                                             <>
                                                 <input
                                                     type="date"
                                                     value={formattedDate}
-                                                    onChange={(e) => handleInputChange(doc.Document_id, 'date', e.target.value)}
+                                                    onChange={(e) => handleInputChange(doc.document_id, 'date', e.target.value)}
                                                     className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-gray-900"
                                                     title="Date"
                                                     placeholder="YYYY-MM-DD"
                                                     aria-label="Date"
                                                 />
-                                                <EditIcon />
+
                                             </>
                                         ) : (
                                             <p className="text-gray-900 mt-1">
@@ -367,13 +298,12 @@ export default function DocumentsListPage() {
 
                                     {/* --- Going on Column --- */}
                                     <div className="md:col-span-3 relative group mb-4 md:mb-0">
-                                        {/* Mobile Label */}
                                         <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><GoingOnIcon /> Going on</label>
                                         {isRowEditing ? (
                                             <>
                                                 <textarea
                                                     value={doc.report}
-                                                    onChange={(e) => handleInputChange(doc.Document_id, 'report', e.target.value)}
+                                                    onChange={(e) => handleInputChange(doc.document_id, 'report', e.target.value)}
                                                     className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-gray-900"
                                                     rows={4}
                                                     placeholder="กรอกสิ่งที่ทำวันนี้..."
@@ -389,15 +319,15 @@ export default function DocumentsListPage() {
 
                                     {/* --- Next Focus Column --- */}
                                     <div className="md:col-span-3 relative group mb-4 md:mb-0">
-                                        {/* Mobile Label */}
                                         <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><NextFocusIcon /> Next Focus</label>
                                         {isRowEditing ? (
                                             <>
                                                 <textarea
                                                     value={doc.nextfocus}
-                                                    onChange={(e) => handleInputChange(doc.Document_id, 'nextfocus', e.target.value)}
+                                                    onChange={(e) => handleInputChange(doc.document_id, 'nextfocus', e.target.value)}
                                                     className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-gray-900"
                                                     rows={4}
+
                                                     placeholder="กรอกสิ่งที่จะทำต่อไป..."
                                                     title="Next focus - สิ่งที่ต้องทำต่อไป"
                                                     aria-label="Next focus"
@@ -411,7 +341,6 @@ export default function DocumentsListPage() {
 
                                     {/* --- Status Column --- */}
                                     <div className="md:col-span-2 md:space-y-3 md:pl-2 relative">
-                                        {/* Mobile Label */}
                                         <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><StatusIcon /> Status</label>
                                         {isRowEditing ? (
                                             <>
@@ -419,10 +348,10 @@ export default function DocumentsListPage() {
                                                 <label className="flex items-center text-sm cursor-pointer font-normal text-gray-600">
                                                     <input
                                                         type="radio"
-                                                        name={`status-${doc.Document_id}`}
+                                                        name={`status-${doc.document_id}`}
                                                         value="1"
                                                         checked={doc.status === '1'}
-                                                        onChange={(e) => handleInputChange(doc.Document_id, 'status', e.target.value)}
+                                                        onChange={(e) => handleInputChange(doc.document_id, 'status', e.target.value)}
                                                         className="mr-2 h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"
                                                     />
                                                     เสร็จสิ้น
@@ -430,10 +359,10 @@ export default function DocumentsListPage() {
                                                 <label className="flex items-center text-sm cursor-pointer font-normal text-gray-600">
                                                     <input
                                                         type="radio"
-                                                        name={`status-${doc.Document_id}`}
+                                                        name={`status-${doc.document_id}`}
                                                         value="0"
                                                         checked={doc.status === '0'}
-                                                        onChange={(e) => handleInputChange(doc.Document_id, 'status', e.target.value)}
+                                                        onChange={(e) => handleInputChange(doc.document_id, 'status', e.target.value)}
                                                         className="mr-2 h-4 w-4 text-gray-600 border-gray-300 focus:ring-gray-500"
                                                     />
                                                     กำลังดำเนินงาน
