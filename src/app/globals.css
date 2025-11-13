@@ -3,8 +3,7 @@
 @plugin "flowbite/plugin";
 @import 'flowbite/dist/flowbite.css'; /* หรือเวอร์ชันที่คุณใช้ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+ 
 
 /* * ใช้ CSS Variables สำหรับการปรับขนาดตัวอักษร 
    * --font-size-fluid: ใช้ clamp() เพื่อกำหนดขนาดตัวอักษรที่เปลี่ยนแปลงตามขนาดหน้าจอ 
@@ -39,8 +38,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    
+    
   }
 }
 
