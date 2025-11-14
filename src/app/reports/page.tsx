@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from '@/utils/supabase/client';
 
+export const dynamic = 'force-dynamic';
+
 // --- 1. TypeScript Interfaces (ปรับตาม ERD) ---
 interface User {
     username: string; // 👈 แก้ไข (จาก NAME)
@@ -118,13 +120,13 @@ export default function DocumentsListPage() {
     };
 
 
-    
+
     const handleSaveReports = async () => {
         setLoading(true);
         const docsToSave = documents.filter(doc => editingRowIds.includes(doc.document_id)); // 👈 แก้ไข
         console.log("📝 Documents to save:", docsToSave);
-        
-        
+
+
 
         try {
             const response = await fetch('/api/save-documents/', {
@@ -403,9 +405,8 @@ export default function DocumentsListPage() {
                                         ) : (
                                             <div className="flex items-center text-sm font-medium text-gray-800">
                                                 <span
-                                                    className={`w-3 h-3 rounded-full mr-2 ${
-                                                        doc.status === '1' ? 'bg-teal-500' : 'bg-[#333333]'
-                                                    }`}
+                                                    className={`w-3 h-3 rounded-full mr-2 ${doc.status === '1' ? 'bg-teal-500' : 'bg-[#333333]'
+                                                        }`}
                                                 ></span>
                                                 {doc.status === '1'
                                                     ? 'เสร็จสิ้น'

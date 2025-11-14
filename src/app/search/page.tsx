@@ -5,6 +5,8 @@ import { supabase } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 
+export const dynamic = 'force-dynamic';
+
 export default function SearchUserPage() {
     const router = useRouter();
     const [currentUser, setCurrentUser] = useState<any>(null);
@@ -66,11 +68,11 @@ export default function SearchUserPage() {
 
         <div className="flex-1 overflow-auto ml-5">
             <div className="p-8">
-                
+
                 {/* Header */}
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                     
+
                         <h1 className="text-3xl font-bold text-gray-800">ค้นหารายงานของสมาชิก</h1>
                     </div>
                     {/* หน้านี้ไม่มีปุ่ม Add */}
