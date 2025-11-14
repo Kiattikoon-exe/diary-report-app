@@ -12,7 +12,7 @@ export default function UserManagementPage() {
     const router = useRouter();
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [allUsers, setAllUsers] = useState<any[]>([]);
-
+    const [loading, setLoading] = useState(true);
     // Filters & Pagination
     const [searchTerm, setSearchTerm] = useState('');
     const [filterRole, setFilterRole] = useState('ทั้งหมด');
@@ -23,6 +23,18 @@ export default function UserManagementPage() {
     // Modals
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingUser, setEditingUser] = useState<any>(null);
+
+    const BookIcon = () => (
+        <svg className="w-10 h-10" fill="none" stroke="url(#logoGradient)" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style={{ stopColor: '#0891b2', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: '#14b8a6', stopOpacity: 1 }} />
+                </linearGradient>
+            </defs>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.484 9.332 5 7.5 5S4.168 5.484 3 6.253v13C4.168 18.484 5.668 18 7.5 18s3.332.484 4.5 1.253m0-13C13.168 5.484 14.668 5 16.5 5c1.831 0 3.332.484 4.5 1.253v13C19.832 18.484 18.332 18 16.5 18c-1.831 0-3.332.484-4.5 1.253"></path>
+        </svg>
+    );
 
     // 1. Check Auth & Fetch Data
     useEffect(() => {
@@ -43,9 +55,11 @@ export default function UserManagementPage() {
     }, [router]);
 
     const fetchUsers = async () => {
+        
         const { data, error } = await supabase.from('users').select('*').order('id', { ascending: true });
         if (!error && data) setAllUsers(data);
-    };
+        setLoading(true);
+        setLoading(false);    };
 
     // --- 2. Add User Logic (เพิ่มใหม่) ---
     const handleAddUser = async (userData: any) => {
@@ -108,11 +122,20 @@ export default function UserManagementPage() {
     const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const getRoleDisplay = (role: string) => {
-        const map: any = { 'admin': 'admin', 'manager': 'admin' };
+        const map: any = { 'admin': 'admin', 'manager': 'manager' };
         return map[role] || role;
     };
 
-    if (!currentUser) return <div className="p-8 text-center">Loading...</div>;
+    // --- Render Loading ---
+    if (loading || !currentUser) {
+        return (
+            <div className="flex items-center justify-center w-full h-full p-4 sm:p-8">
+                <div className="bg-white rounded-lg shadow-lg p-12 text-center mx-8">
+                    <p className="text-gray-500 text-lg">กำลังดึงข้อมูล...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="my-8">
@@ -131,7 +154,7 @@ export default function UserManagementPage() {
                                 WebkitTextFillColor: 'transparent',
                                 backgroundClip: 'text',
                                 color: '#0891b2'
-                            }}>จัดการสมาชิก {currentUser.username} {currentUser.role} {currentUser.position}</h1>
+                            }}>จัดการสมาชิก {currentUser.username} - {currentUser.role} - {currentUser.position}</h1>
                         </div>
                         {currentUser.role === 'admin' && (
                             <button onClick={() => setShowAddModal(true)} className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:shadow-lg transition flex items-center space-x-2">
@@ -179,7 +202,7 @@ export default function UserManagementPage() {
                                         <td className="px-6 py-4 text-sm text-gray-700">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                                         <td className="px-6 py-4 text-sm text-gray-700">{user.username}</td>
                                         <td className="px-6 py-4 text-sm text-gray-700">{user.firstname} {user.lastname}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-700">{getRoleDisplay(user.role)}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-700">{user.role}</td>
                                         <td className="px-6 py-4 text-sm text-gray-700">{user.position}</td>
                                         <td className="px-6 py-4 text-sm">
                                             <div className="flex items-center space-x-2">

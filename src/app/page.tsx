@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 
 export default function RootPage() {
   const router = useRouter();
-
+  const storedUser = localStorage.getItem('currentUser');
   useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser');
+    
     if (!storedUser) {
       router.push('/login');
     } else {
+      
       const user = JSON.parse(storedUser);
       if (['admin', 'manager'].includes(user.role)) {
         router.push('/manageUser');
