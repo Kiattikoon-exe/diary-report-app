@@ -7,7 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import EditUserModal from '@/components/EditUserModal';
 import AddUserModal from '@/components/AddUserModal';
 
-export const dynamic = 'force-dynamic';
+
 
 export default function UserManagementPage() {
     const router = useRouter();
@@ -56,12 +56,11 @@ export default function UserManagementPage() {
     }, [router]);
 
     const fetchUsers = async () => {
-
+        
         const { data, error } = await supabase.from('users').select('*').order('id', { ascending: true });
         if (!error && data) setAllUsers(data);
         setLoading(true);
-        setLoading(false);
-    };
+        setLoading(false);    };
 
     // --- 2. Add User Logic (เพิ่มใหม่) ---
     const handleAddUser = async (userData: any) => {

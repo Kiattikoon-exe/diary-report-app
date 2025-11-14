@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/utils/supabase/client';
 import Sidebar from '@/components/Sidebar';
 
-export const dynamic = 'force-dynamic';
+
 
 // --- 1. ไอคอน (จากหน้า reports) ---
 const DateIcon = () => (
