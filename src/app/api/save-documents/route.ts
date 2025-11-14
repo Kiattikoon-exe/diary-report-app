@@ -66,6 +66,15 @@ export async function POST(req: Request) {
       });
 
       if (doc.document_id < 0) {
+        // Validation: Ensure either report or nextfocus is not empty for new documents
+        if (doc.report.trim() === '' && doc.nextfocus.trim() === '') {
+          console.error("❌ Validation failed: 'report' or 'nextfocus' must not be empty for new document.", doc);
+          return NextResponse.json(
+            { error: "กรุณากรอกข้อมูลในช่อง 'Going on' หรือ 'Next Focus' อย่างน้อยหนึ่งช่องสำหรับเอกสารใหม่", document: doc },
+            { status: 400 }
+          );
+        }
+
         // INSERT - ใช้ docDataForInsert (มี user_id)
         console.log("➕ Attempting INSERT:", docDataForInsert);
 
@@ -115,6 +124,7 @@ export async function POST(req: Request) {
             { status: 500 }
           );
         }
+        
 
         console.log("✅ UPDATE Success:", data);
         results.push({ action: "update", data });

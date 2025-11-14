@@ -46,32 +46,38 @@ export default function DocumentsListPage() {
     // --- 3. State ---
     const [documents, setDocuments] = useState<DocumentItem[]>([]);
     {/* ‼️ แก้ไข Type: user_id เป็น string (uuid) ‼️ */ }
-    const [currentUser, setCurrentUser] = useState<{ name: string; user_id: string } | null>(null);
+    // const [currentUser, setCurrentUser] = useState<{ username: string; user_id: string; firstname: string; lastname: string; role: string; position: string; } | null>(null);
+    const [currentUser, setCurrentUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [editingRowIds, setEditingRowIds] = useState<number[]>([]);
     const [newRowCounter, setNewRowCounter] = useState(0);
     const [isEditing, setIsEditing] = useState(false);
 
+    const BookIcon = () => (
+        <svg className="w-10 h-10" fill="none" stroke="url(#logoGradient)" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style={{ stopColor: '#0891b2', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: '#14b8a6', stopOpacity: 1 }} />
+                </linearGradient>
+            </defs>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.484 9.332 5 7.5 5S4.168 5.484 3 6.253v13C4.168 18.484 5.668 18 7.5 18s3.332.484 4.5 1.253m0-13C13.168 5.484 14.668 5 16.5 5c1.831 0 3.332.484 4.5 1.253v13C19.832 18.484 18.332 18 16.5 18c-1.831 0-3.332.484-4.5 1.253"></path>
+        </svg>
+    );
     // --- Fetch Data ---
-    const fetchUserDocuments = async (user_id: string) => {
+    // --- Fetch Data ---
+    const fetchUserDocuments = async (userId: string) => {
         setLoading(true);
-        // ‼️ แก้ไข Query ให้ตรง ERD ‼️
         const { data, error } = await supabase
             .from('documents')
-            .select(`document_id, report, nextfocus, status, date, user_id`) // 👈 ‼️ แก้ไข: ใช้ "users" แทน "users:user_id"
-            .eq('user_id', user_id);
+            .select(`document_id, report, nextfocus, status, date, user_id`)
+            .eq('user_id', userId)
+            .order('date', { ascending: false });
 
-        if (error) {
-            console.error("Error fetching documents:", error);
-        } else {
+        if (!error) {
             const normalized = (data || []).map((d: any) => ({
-                document_id: d.document_id, // 👈 แก้ไข
-                report: d.report,
-                nextfocus: d.nextfocus,
-                status: d.status,
-                date: d.date,
-                user_id: d.user_id, // 👈 แก้ไข
-                users: d.users ? (Array.isArray(d.users) ? d.users[0] : d.users) : { username: currentUser?.name || '', role: '' }
+                ...d,
+                users: { username: currentUser?.username || '', role: currentUser?.role || '' }
             })) as DocumentItem[];
             setDocuments(normalized);
         }
@@ -90,8 +96,13 @@ export default function DocumentsListPage() {
         // และเปลี่ยน user.name เป็น user.firstname หรือ user.username ตามที่ API ส่งมา
         if (user && user.id) {
             setCurrentUser({
-                name: user.firstname || user.username, // API ส่ง firstname มา
-                user_id: user.id // ✅ แก้เป็น user.id
+                // API ส่ง firstname มา
+                user_id: user.id, // ✅ แก้เป็น user.id
+                username: user.username,
+                firstname: user.firstname,
+                lastname: user.lastname,
+                role: user.role,
+                position: user.position
             });
             fetchUserDocuments(user.id); // ✅ แก้เป็น user.id
         } else {
@@ -101,18 +112,19 @@ export default function DocumentsListPage() {
         }
     }, [router]);
 
-    /// --- Handlers ---
+    // --- Handlers (Save, Cancel, Edit, Add) ---
     const handleInputChange = (docId: number, field: keyof DocumentItem, value: string) => {
-        setDocuments(prev => prev.map(doc =>
-            // 👈 แก้ไข
-            doc.document_id === docId ? { ...doc, [field]: value } : doc
-        ));
+        setDocuments(prev => prev.map(doc => doc.document_id === docId ? { ...doc, [field]: value } : doc));
     };
 
+
+    
     const handleSaveReports = async () => {
         setLoading(true);
         const docsToSave = documents.filter(doc => editingRowIds.includes(doc.document_id)); // 👈 แก้ไข
         console.log("📝 Documents to save:", docsToSave);
+        
+        
 
         try {
             const response = await fetch('/api/save-documents/', {
@@ -166,7 +178,7 @@ export default function DocumentsListPage() {
             status: '0',
             date: new Date().toISOString().split('T')[0],
             user_id: currentUser.user_id, // 👈 แก้ไข
-            users: { username: currentUser.name, role: '' }
+            users: { username: currentUser.username, role: '' }
         };
 
         setDocuments(prev => [newDocument, ...prev]);
@@ -185,16 +197,36 @@ export default function DocumentsListPage() {
         );
     }
     return (
+
+
         <div className="my-8">
+            <div className="flex justify-end items-center mb-4">
+                <div className="flex items-center gap-2">
+                    <BookIcon />
+                    <span className="font-bold text-2xl" style={{
+                        background: 'linear-gradient(to right, #0891b2, #14b8a6)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                        color: '#0891b2'
+                    }}>
+                        {currentUser.firstname} {currentUser.role} {currentUser.position}
+                    </span>
+                </div>
+            </div>
+
             {/* --- 9a. Header (หัวข้อและปุ่ม) --- */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+
                 <h1 className="text-3xl font-bold text-gray-800">
                     แบบบันทึกการปฏิบัติงาน
-                    <span className="text-xl text-gray-500 font-normal ml-2">
-                        (ของ {currentUser.name})
-                    </span>
                 </h1>
+
+
                 <div className="flex flex-wrap gap-2">
+
+
+
                     {isEditing ? (
                         <>
                             <button
@@ -352,7 +384,7 @@ export default function DocumentsListPage() {
                                                         value="1"
                                                         checked={doc.status === '1'}
                                                         onChange={(e) => handleInputChange(doc.document_id, 'status', e.target.value)}
-                                                        className="mr-2 h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"
+                                                        className="mr-2 h-4 w-4 text-teal-500 border-gray-300 focus:ring-green-500"
                                                     />
                                                     เสร็จสิ้น
                                                 </label>
@@ -369,16 +401,16 @@ export default function DocumentsListPage() {
                                                 </label>
                                             </>
                                         ) : (
-                                            <>
-                                                <div className="flex items-center text-sm font-medium text-gray-800">
-                                                    <span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '1' ? 'bg-[#3FCF38]' : 'bg-gray-300'}`}></span>
-                                                    เสร็จสิ้น
-                                                </div>
-                                                <div className="flex items-center text-sm font-medium text-gray-800">
-                                                    <span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '0' ? 'bg-[#333333]' : 'bg-gray-300'}`}></span>
-                                                    กำลังดำเนินงาน
-                                                </div>
-                                            </>
+                                            <div className="flex items-center text-sm font-medium text-gray-800">
+                                                <span
+                                                    className={`w-3 h-3 rounded-full mr-2 ${
+                                                        doc.status === '1' ? 'bg-teal-500' : 'bg-[#333333]'
+                                                    }`}
+                                                ></span>
+                                                {doc.status === '1'
+                                                    ? 'เสร็จสิ้น'
+                                                    : 'กำลังดำเนินงาน'}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
