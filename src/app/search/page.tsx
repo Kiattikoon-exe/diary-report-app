@@ -5,7 +5,7 @@ import { supabase } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 
-export const dynamic = 'force-dynamic';
+
 
 export default function SearchUserPage() {
     const router = useRouter();

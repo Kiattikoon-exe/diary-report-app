@@ -2,18 +2,16 @@
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
 export const dynamic = 'force-dynamic';
-
 export default function RootPage() {
   const router = useRouter();
   const storedUser = localStorage.getItem('currentUser');
   useEffect(() => {
-
+    
     if (!storedUser) {
       router.push('/login');
     } else {
-
+      
       const user = JSON.parse(storedUser);
       if (['admin', 'manager'].includes(user.role)) {
         router.push('/manageUser');
