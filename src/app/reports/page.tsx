@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from '@/utils/supabase/client';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 
 
@@ -26,34 +27,93 @@ interface DocumentItem {
 
 // --- ไอคอน (เหมือนเดิม) ---
 const DateIcon = () => (
-    <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
 );
 const GoingOnIcon = () => (
-    <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
 );
 const NextFocusIcon = () => (
-    <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
 );
 const StatusIcon = () => (
-    <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
 );
 const EditIcon = () => (
     <svg className="w-4 h-4 text-gray-400 absolute top-2 right-2 group-hover:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
 );
 
+const BookIcon = () => (
+    <svg className="w-10 h-10" fill="none" stroke="url(#logoGradient)" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style={{ stopColor: '#0891b2', stopOpacity: 1 }} />
+                <stop offset="100%" style={{ stopColor: '#14b8a6', stopOpacity: 1 }} />
+            </linearGradient>
+        </defs>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.484 9.332 5 7.5 5S4.168 5.484 3 6.253v13C4.168 18.484 5.668 18 7.5 18s3.332.484 4.5 1.253m0-13C13.168 5.484 14.668 5 16.5 5c1.831 0 3.332.484 4.5 1.253v13C19.832 18.484 18.332 18 16.5 18c-1.831 0-3.332.484-4.5 1.253"></path>
+    </svg>
+);
+
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children }: { isOpen: boolean, onClose: () => void, onConfirm: () => void, title: string, children: React.ReactNode }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-opacity-50 z-50 flex justify-center items-center">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md text-center">
+                <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
+                <p className="text-gray-600 mb-6">{children}</p>
+                <div className="flex justify-center gap-4">
+                    <button
+                        onClick={onConfirm}
+                        className="px-6 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:shadow-lg transition-shadow"
+                    >
+                        ยืนยัน
+                    </button>
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2 rounded-lg bg-[#333333] text-white hover:bg-black transition-colors"
+                    >
+                        ยกเลิก
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    );
+};
+
+/**
+ * Converts a date string or Date object to 'YYYY-MM-DD' format based on the local timezone,
+ * preventing UTC conversion issues.
+ * @param dateInput The date to format.
+ */
+const formatDateForInput = (dateInput: string | Date): string => {
+    const date = new Date(dateInput);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 // --- 2. Page Component (Main Export) ---
 export default function DocumentsListPage() {
     const router = useRouter();
+    const tableContainerRef = React.useRef<HTMLDivElement>(null);
 
     // --- 3. State ---
     const [documents, setDocuments] = useState<DocumentItem[]>([]);
     {/* ‼️ แก้ไข Type: user_id เป็น string (uuid) ‼️ */ }
     // const [currentUser, setCurrentUser] = useState<{ username: string; user_id: string; firstname: string; lastname: string; role: string; position: string; } | null>(null);
+    const [originalDocuments, setOriginalDocuments] = useState<DocumentItem[]>([]);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [editingRowIds, setEditingRowIds] = useState<number[]>([]);
     const [newRowCounter, setNewRowCounter] = useState(0);
     const [isEditing, setIsEditing] = useState(false);
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10); // Default to 10 items per page
+    const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
 
     const BookIcon = () => (
         <svg className="w-10 h-10" fill="none" stroke="url(#logoGradient)" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -66,7 +126,7 @@ export default function DocumentsListPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.484 9.332 5 7.5 5S4.168 5.484 3 6.253v13C4.168 18.484 5.668 18 7.5 18s3.332.484 4.5 1.253m0-13C13.168 5.484 14.668 5 16.5 5c1.831 0 3.332.484 4.5 1.253v13C19.832 18.484 18.332 18 16.5 18c-1.831 0-3.332.484-4.5 1.253"></path>
         </svg>
     );
-    // --- Fetch Data ---
+
     // --- Fetch Data ---
     const fetchUserDocuments = async (userId: string) => {
         setLoading(true);
@@ -74,7 +134,7 @@ export default function DocumentsListPage() {
             .from('documents')
             .select(`document_id, report, nextfocus, status, date, user_id`)
             .eq('user_id', userId)
-            .order('date', { ascending: false });
+            .order('date', { ascending: true });
 
         if (!error) {
             const normalized = (data || []).map((d: any) => ({
@@ -82,9 +142,14 @@ export default function DocumentsListPage() {
                 users: { username: currentUser?.username || '', role: currentUser?.role || '' }
             })) as DocumentItem[];
             setDocuments(normalized);
+            setOriginalDocuments(JSON.parse(JSON.stringify(normalized))); // Deep copy for comparison
         }
         setLoading(false);
     };
+
+    // Pagination Logic
+    const totalPages = Math.ceil(documents.length / itemsPerPage);
+    const paginatedDocuments = documents.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     // --- Effects ---
     useEffect(() => {
@@ -120,13 +185,30 @@ export default function DocumentsListPage() {
     };
 
 
-    
+
     const handleSaveReports = async () => {
         setLoading(true);
-        const docsToSave = documents.filter(doc => editingRowIds.includes(doc.document_id)); // 👈 แก้ไข
-        console.log("📝 Documents to save:", docsToSave);
-        
-        
+        setShowSaveConfirmModal(false);
+
+        // [REFACTORED] คัดกรองเฉพาะเอกสารที่มีการเปลี่ยนแปลงจริงๆ
+        const docsToSave = documents.filter(doc => {
+            // 1. ต้องเป็นแถวที่อยู่ในโหมดแก้ไขเท่านั้น
+            if (!editingRowIds.includes(doc.document_id)) return false;
+
+            // 2. ถ้าเป็นแถวใหม่ (ID ติดลบ) ให้ส่งไปบันทึกเสมอ
+            if (doc.document_id < 0) return true;
+
+            // 3. ถ้าเป็นแถวเก่า ให้เปรียบเทียบกับข้อมูลดั้งเดิม
+            const originalDoc = originalDocuments.find(orig => orig.document_id === doc.document_id);
+            if (!originalDoc) return false; // ไม่ควรเกิดขึ้น
+
+            // คืนค่า true ถ้ามี field ใดๆ เปลี่ยนแปลง
+            return originalDoc.report !== doc.report || originalDoc.nextfocus !== doc.nextfocus || originalDoc.date !== doc.date || originalDoc.status !== doc.status;
+        });
+
+        console.log("📝 Documents to save (Only changed ones):", docsToSave);
+
+
 
         try {
             const response = await fetch('/api/save-documents/', {
@@ -143,7 +225,10 @@ export default function DocumentsListPage() {
             setEditingRowIds([]);
             setIsEditing(false);
 
-            if (currentUser) await fetchUserDocuments(currentUser.user_id);
+            if (currentUser) {
+                await fetchUserDocuments(currentUser.user_id);
+                setCurrentPage(1); // กลับไปหน้าแรกหลังจากบันทึก
+            }
         } catch (error) {
             console.error("💥 Error saving:", error);
             const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -154,17 +239,33 @@ export default function DocumentsListPage() {
     };
 
     const handleCancelEdit = () => {
-        setDocuments(prev => prev.filter(doc => doc.document_id > 0)); // 👈 แก้ไข
+        setDocuments(originalDocuments);
         setEditingRowIds([]);
         setIsEditing(false);
     };
 
     const handleEditClick = () => {
         if (!isEditing) {
+            setOriginalDocuments(JSON.parse(JSON.stringify(documents))); // Store original state
             setIsEditing(true);
             setEditingRowIds(documents.map(doc => doc.document_id)); // 👈 แก้ไข
         } else {
-            handleSaveReports();
+            // ตรวจสอบว่ามีการแก้ไขข้อมูลหรือไม่
+            const hasChanges = documents.some(doc => {
+                if (!editingRowIds.includes(doc.document_id)) return false;
+                const originalDoc = originalDocuments.find(orig => orig.document_id === doc.document_id);
+                // ถ้าเป็นแถวใหม่ ให้เช็คว่ามีการกรอกข้อมูลหรือไม่
+                if (doc.document_id < 0) {
+                    return doc.report.trim() !== '' || doc.nextfocus.trim() !== '';
+                }
+                return originalDoc && (originalDoc.report !== doc.report || originalDoc.nextfocus !== doc.nextfocus || originalDoc.date !== doc.date || originalDoc.status !== doc.status);
+            });
+
+            if (!hasChanges) {
+                alert("กรุณากรอกข้อมูลก่อนบันทึก หรือข้อมูลไม่มีการเปลี่ยนแปลง");
+                return;
+            }
+            setShowSaveConfirmModal(true);
         }
     };
 
@@ -178,13 +279,22 @@ export default function DocumentsListPage() {
             report: '',
             nextfocus: '',
             status: '0',
-            date: new Date().toISOString().split('T')[0],
+            date: formatDateForInput(new Date()), // Use timezone-safe formatter
             user_id: currentUser.user_id, // 👈 แก้ไข
             users: { username: currentUser.username, role: '' }
         };
 
-        setDocuments(prev => [newDocument, ...prev]);
-        setEditingRowIds([tempId]);
+        const updatedDocuments = [...documents, newDocument];
+        setDocuments(updatedDocuments);
+
+        // Navigate to the last page where the new row is
+        const newTotalPages = Math.ceil(updatedDocuments.length / itemsPerPage);
+        setCurrentPage(newTotalPages);
+
+        // Scroll to the table container to make the new row visible
+        setTimeout(() => tableContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 100);
+
+        setEditingRowIds(prev => [tempId, ...prev]);
         setIsEditing(true);
     };
 
@@ -199,228 +309,251 @@ export default function DocumentsListPage() {
         );
     }
     return (
-
-
         <div className="my-8">
-            <div className="flex justify-end items-center mb-4">
-                <div className="flex items-center gap-2">
-                    <BookIcon />
-                    <span className="font-bold text-2xl" style={{
-                        background: 'linear-gradient(to right, #0891b2, #14b8a6)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        color: '#0891b2'
-                    }}>
-                        {currentUser.firstname} {currentUser.role} {currentUser.position}
-                    </span>
-                </div>
-            </div>
+            {/* Main Content */}
+            <div className="flex-1 ml-5">
+                <div className="p-8">
+                    {/* Header */}
+                    {/* --- Header Row 1: Logo --- */}
+                    <div className="flex justify-end items-center mb-4">
+                        <div className="flex items-center gap-2">
+                            <BookIcon />
+                            <h1>
+                                <span className="font-bold text-4xl" style={{
+                                    background: 'linear-gradient(to right, #0891b2, #14b8a6)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    backgroundClip: 'text',
+                                    color: '#0891b2'
+                                }}>
+                                    {currentUser.firstname} {currentUser.lastname} - {currentUser.role} - {currentUser.position}
+                                </span>
+                            </h1>
 
-            {/* --- 9a. Header (หัวข้อและปุ่ม) --- */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        </div>
+                    </div>
 
-                <h1 className="text-3xl font-bold text-gray-800">
-                    แบบบันทึกการปฏิบัติงาน
-                </h1>
+                    {/* --- Header Row 2: Title & Buttons --- */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        {/* Title */}
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-800" >
+                                แบบบันทึกการปฏิบัติงาน
+                            </h1>
 
+                        </div>
 
-                <div className="flex flex-wrap gap-2">
-
-
-
-                    {isEditing ? (
-                        <>
+                        {/* Buttons */}
+                        <div className="flex flex-wrap gap-2">
+                            {isEditing ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={handleEditClick} // This will now open the modal
+                                        disabled={loading}
+                                        className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:shadow-lg transition flex items-center space-x-2"
+                                    >
+                                        {loading ? 'กำลังบันทึก...' : '💾 บันทึก'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleCancelEdit}
+                                        className="px-6 py-3 bg-[#333333] text-white rounded-lg hover:bg-black transition flex items-center space-x-2"
+                                    >
+                                        ยกเลิก
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={handleEditClick}
+                                    disabled={loading}
+                                    className="bg-[#6e6e6e] text-white px-5 py-2 rounded-lg hover:bg-[#5c5a5a] transition text-sm font-medium"
+                                >
+                                    ✏️ แก้ไข
+                                </button>
+                            )}
                             <button
                                 type="button"
-                                onClick={handleEditClick}
-                                disabled={loading}
-                                className="bg-[#333333] text-white px-5 py-2 rounded-lg hover:bg-black transition text-sm font-medium"
+                                onClick={handleAddNewRow}
+                                disabled={loading || isEditing}
+                                className="bg-gradient-to-r from-teal-500 to-teal-600 text-white px-5 py-2 rounded-lg hover:shadow-lg transition text-sm font-medium"
                             >
-                                {loading ? 'กำลังบันทึก...' : '💾 บันทึก'}
+                                + เพิ่มรายการ
                             </button>
-                            <button
-                                type="button"
-                                onClick={handleCancelEdit}
-                                className="bg-[#625E5E] text-white px-5 py-2 rounded-lg hover:bg-gray-700 transition text-sm font-medium"
-                            >
-                                ยกเลิก
-                            </button>
-                        </>
-                    ) : (
-                        <button
-                            type="button"
-                            onClick={handleEditClick}
-                            disabled={loading}
-                            className="bg-[#6e6e6e] text-white px-5 py-2 rounded-lg hover:bg-[#5c5a5a] transition text-sm font-medium"
-                        >
-                            ✏️ แก้ไข
-                        </button>
-                    )}
+                        </div>
+                    </div>
 
-                    <button
-                        type="button"
-                        onClick={handleAddNewRow}
-                        disabled={loading || isEditing}
-                        className="bg-[#625E5E] text-white px-5 py-2 rounded-lg hover:bg-[#5c5a5a] transition text-sm font-medium disabled:opacity-50"
+                    <ConfirmationModal
+                        isOpen={showSaveConfirmModal}
+                        onClose={() => setShowSaveConfirmModal(false)}
+                        onConfirm={handleSaveReports}
+                        title="ยืนยันการเปลี่ยนแปลง ?"
                     >
-                        + เพิ่มรายการ
-                    </button>
+                        คุณต้องการเปลี่ยนแปลงข้อมูลของคุณ
+                    </ConfirmationModal>
 
+
+
+                    {/* Table */}
+                    <div ref={tableContainerRef} className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col">
+                        <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
+                            <table className="w-full">
+                                <thead className="bg-[#333333] text-white sticky top-0 z-10">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-sm font-semibold">Date</th>
+                                        <th className="px-6 py-3 text-left text-sm font-semibold">Going on</th>
+                                        <th className="px-6 py-3 text-left text-sm font-semibold">Next Focus</th>
+                                        <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200">
+                                    {documents.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                                                ✅ ไม่พบรายงาน คุณยังไม่ได้สร้างรายงานใดๆ
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        paginatedDocuments.map((doc) => {
+                                            const formattedDateForInput = formatDateForInput(doc.date);
+                                            const isRowEditing = editingRowIds.includes(doc.document_id);
+
+                                            return (
+                                                <tr key={doc.document_id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 text-sm text-gray-700">
+                                                        {isRowEditing ? (
+                                                            <div className="relative flex items-center">
+                                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400">
+                                                                    <DateIcon />
+                                                                </span>
+                                                                <input
+                                                                    type="date"
+                                                                    value={formattedDateForInput}
+                                                                    onChange={(e) => handleInputChange(doc.document_id, 'date', e.target.value)}
+                                                                    className="w-full p-2 pl-8 border border-gray-300 rounded-md shadow-sm text-gray-900"
+                                                                    title="Date"
+                                                                    aria-label="Date"
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            new Date(doc.date).toLocaleDateString('th-TH', { dateStyle: 'medium' })
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-700 max-w-sm">
+                                                        {isRowEditing ? (
+                                                            <div className="relative">
+                                                                <span className="absolute left-2 top-3 text-gray-400">
+                                                                    <GoingOnIcon />
+                                                                </span>
+                                                                <textarea
+                                                                    value={doc.report}
+                                                                    onChange={(e) => handleInputChange(doc.document_id, 'report', e.target.value)}
+                                                                    className="w-full p-2 pl-8 border border-gray-300 rounded-md shadow-sm text-gray-900"
+                                                                    rows={2}
+                                                                    placeholder="กรอกสิ่งที่ทำวันนี้..."
+                                                                    title="Going on - รายการที่ทำ"
+                                                                    aria-label="Going on"
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <p className="whitespace-pre-wrap break-all" title={doc.report}>{doc.report}</p>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-700 max-w-sm">
+                                                        {isRowEditing ? (
+                                                            <div className="relative">
+                                                                <span className="absolute left-2 top-3 text-gray-400">
+                                                                    <NextFocusIcon />
+                                                                </span>
+                                                                <textarea
+                                                                    value={doc.nextfocus}
+                                                                    onChange={(e) => handleInputChange(doc.document_id, 'nextfocus', e.target.value)}
+                                                                    className="w-full p-2 pl-8 border border-gray-300 rounded-md shadow-sm text-gray-900"
+                                                                    rows={2}
+                                                                    placeholder="กรอกสิ่งที่จะทำต่อไป..."
+                                                                    title="Next focus - สิ่งที่ต้องทำต่อไป"
+                                                                    aria-label="Next focus"
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <p className="whitespace-pre-wrap break-all" title={doc.nextfocus}>{doc.nextfocus}</p>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm">
+                                                        {isRowEditing ? (
+                                                            <div className="flex flex-col space-y-2">
+                                                                <label className="flex items-center text-sm cursor-pointer font-normal text-gray-600">
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`status-${doc.document_id}`}
+                                                                        value="1"
+                                                                        checked={doc.status === '1'}
+                                                                        onChange={(e) => handleInputChange(doc.document_id, 'status', e.target.value)}
+                                                                        className="mr-2 h-4 w-4 text-teal-500 border-gray-300 focus:ring-green-500"
+                                                                    />
+                                                                    เสร็จสิ้น
+                                                                </label>
+                                                                <label className="flex items-center text-sm cursor-pointer font-normal text-gray-600">
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`status-${doc.document_id}`}
+                                                                        value="0"
+                                                                        checked={doc.status === '0'}
+                                                                        onChange={(e) => handleInputChange(doc.document_id, 'status', e.target.value)}
+                                                                        className="mr-2 h-4 w-4 text-gray-600 border-gray-300 focus:ring-gray-500"
+                                                                    />
+                                                                    กำลังดำเนินงาน
+                                                                </label>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center text-sm font-medium text-gray-800">
+                                                                <span
+                                                                    className={`w-3 h-3 rounded-full mr-2 ${doc.status === '1' ? 'bg-teal-500' : 'bg-[#333333]'
+                                                                        }`}
+                                                                ></span>
+                                                                {doc.status === '1'
+                                                                    ? 'เสร็จสิ้น'
+                                                                    : 'กำลังดำเนินงาน'}
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        {/* Pagination */}
+                        <div className="px-6 py-4 bg-gray-50 flex justify-between items-center border-t border-gray-200">
+                            <div className="flex items-center space-x-4">
+                                <span className="text-sm text-gray-600">แสดง</span>
+                                <select
+                                    value={itemsPerPage}
+                                    onChange={(e) => {
+                                        setItemsPerPage(Number(e.target.value));
+                                        setCurrentPage(1); // Reset to first page when items per page changes
+                                    }}
+                                    className="px-2 py-1 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm"
+                                    title="Items per page"
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={30}>30</option>
+                                    <option value={50}>50</option>
+                                </select>
+                                <span className="text-sm text-gray-600">รายการต่อหน้า</span>
+                            </div>
+                            <span className="text-sm text-gray-600">หน้า {currentPage} จาก {totalPages}</span>
+                            <div className="flex space-x-2">
+                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-2 py-1 border rounded" aria-label="Previous page"><ChevronLeft /></button>
+                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-2 py-1 border rounded" aria-label="Next page"><ChevronRight /></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-
-
-            {/* --- 9b. "ตาราง" ที่เปลี่ยนเป็นการ์ด --- */}
-            {documents.length === 0 ? (
-                <div className="bg-white rounded-lg shadow-lg p-12 text-center mx-8">
-                    <p className="text-2xl text-gray-500">✅ ไม่พบรายงาน</p>
-                    <p className="text-sm text-gray-500 mt-2">คุณยังไม่ได้สร้างรายงานใดๆ</p>
-                </div>
-            ) : (
-                <div className="mx-auto">
-                    {/* --- Table Header (แสดงเฉพาะจอใหญ่) --- */}
-                    <div className="hidden md:grid md:grid-cols-10 gap-4 p-6  bg-gray-50 rounded-t-lg">
-                        <div className="md:col-span-2 text-sm font-bold text-gray-700 flex items-center ">
-                            <DateIcon /> Date
-                        </div>
-                        <div className="md:col-span-3 text-sm font-bold text-gray-700 flex items-center">
-                            <GoingOnIcon /> Going on
-                        </div>
-                        <div className="md:col-span-3 text-sm font-bold text-gray-700 flex items-center">
-                            <NextFocusIcon /> Next Focus
-                        </div>
-                        <div className="md:col-span-2 text-sm font-bold text-gray-700 flex items-center">
-                            <StatusIcon /> Status
-                        </div>
-                    </div>
-                    {/* --- Responsive Body: Cards on Mobile, Table Rows on Desktop --- */}
-                    <div className="space-y-4 md:space-y-0">
-                        {documents.map((doc) => {
-                            const formattedDate = new Date(doc.date).toISOString().split('T')[0];
-                            const isRowEditing = editingRowIds.includes(doc.document_id); // 👈 แก้ไข
-
-                            // --- Card/Row Container ---
-                            return (
-                                <div key={doc.document_id} className={` 
-                                    bg-white md:grid md:grid-cols-10 md:gap-4 md:items-start 
-                                    p-6 rounded-lg shadow-md md:shadow-none md:rounded-none 
-                                    ${doc.document_id < 0 ? 'bg-blue-50 ring-2 ring-blue-300' : 'border-gray-200'}`}>
-                                    {/* --- Date Column --- */}
-                                    <div className="md:col-span-2 relative group mb-4 md:mb-0">
-                                        <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><DateIcon /> Date</label>
-                                        {isRowEditing ? (
-                                            <>
-                                                <input
-                                                    type="date"
-                                                    value={formattedDate}
-                                                    onChange={(e) => handleInputChange(doc.document_id, 'date', e.target.value)}
-                                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-gray-900"
-                                                    title="Date"
-                                                    placeholder="YYYY-MM-DD"
-                                                    aria-label="Date"
-                                                />
-
-                                            </>
-                                        ) : (
-                                            <p className="text-gray-900 mt-1">
-                                                {new Date(doc.date).toLocaleDateString('th-TH', { dateStyle: 'medium' })}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    {/* --- Going on Column --- */}
-                                    <div className="md:col-span-3 relative group mb-4 md:mb-0">
-                                        <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><GoingOnIcon /> Going on</label>
-                                        {isRowEditing ? (
-                                            <>
-                                                <textarea
-                                                    value={doc.report}
-                                                    onChange={(e) => handleInputChange(doc.document_id, 'report', e.target.value)}
-                                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-gray-900"
-                                                    rows={4}
-                                                    placeholder="กรอกสิ่งที่ทำวันนี้..."
-                                                    title="Going on - รายการที่ทำ"
-                                                    aria-label="Going on"
-                                                />
-                                                <EditIcon />
-                                            </>
-                                        ) : (
-                                            <p className="text-gray-700 text-sm whitespace-pre-wrap">{doc.report}</p>
-                                        )}
-                                    </div>
-
-                                    {/* --- Next Focus Column --- */}
-                                    <div className="md:col-span-3 relative group mb-4 md:mb-0">
-                                        <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><NextFocusIcon /> Next Focus</label>
-                                        {isRowEditing ? (
-                                            <>
-                                                <textarea
-                                                    value={doc.nextfocus}
-                                                    onChange={(e) => handleInputChange(doc.document_id, 'nextfocus', e.target.value)}
-                                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-gray-900"
-                                                    rows={4}
-
-                                                    placeholder="กรอกสิ่งที่จะทำต่อไป..."
-                                                    title="Next focus - สิ่งที่ต้องทำต่อไป"
-                                                    aria-label="Next focus"
-                                                />
-                                                <EditIcon />
-                                            </>
-                                        ) : (
-                                            <p className="text-gray-700 text-sm whitespace-pre-wrap">{doc.nextfocus}</p>
-                                        )}
-                                    </div>
-
-                                    {/* --- Status Column --- */}
-                                    <div className="md:col-span-2 md:space-y-3 md:pl-2 relative">
-                                        <label className="text-sm font-bold text-gray-700 flex items-center mb-2 md:hidden"><StatusIcon /> Status</label>
-                                        {isRowEditing ? (
-                                            <>
-
-                                                <label className="flex items-center text-sm cursor-pointer font-normal text-gray-600">
-                                                    <input
-                                                        type="radio"
-                                                        name={`status-${doc.document_id}`}
-                                                        value="1"
-                                                        checked={doc.status === '1'}
-                                                        onChange={(e) => handleInputChange(doc.document_id, 'status', e.target.value)}
-                                                        className="mr-2 h-4 w-4 text-teal-500 border-gray-300 focus:ring-green-500"
-                                                    />
-                                                    เสร็จสิ้น
-                                                </label>
-                                                <label className="flex items-center text-sm cursor-pointer font-normal text-gray-600">
-                                                    <input
-                                                        type="radio"
-                                                        name={`status-${doc.document_id}`}
-                                                        value="0"
-                                                        checked={doc.status === '0'}
-                                                        onChange={(e) => handleInputChange(doc.document_id, 'status', e.target.value)}
-                                                        className="mr-2 h-4 w-4 text-gray-600 border-gray-300 focus:ring-gray-500"
-                                                    />
-                                                    กำลังดำเนินงาน
-                                                </label>
-                                            </>
-                                        ) : (
-                                            <div className="flex items-center text-sm font-medium text-gray-800">
-                                                <span
-                                                    className={`w-3 h-3 rounded-full mr-2 ${
-                                                        doc.status === '1' ? 'bg-teal-500' : 'bg-[#333333]'
-                                                    }`}
-                                                ></span>
-                                                {doc.status === '1'
-                                                    ? 'เสร็จสิ้น'
-                                                    : 'กำลังดำเนินงาน'}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
