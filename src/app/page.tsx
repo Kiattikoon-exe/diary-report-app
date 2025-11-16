@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 export const dynamic = 'force-dynamic';
 export default function RootPage() {
   const router = useRouter();
-  const storedUser = localStorage.getItem('currentUser');
   useEffect(() => {
-    
+    // ย้ายการเรียกใช้ localStorage มาไว้ใน useEffect เพื่อให้โค้ดส่วนนี้ทำงานบน Client เท่านั้น
+    const storedUser = localStorage.getItem('currentUser');
     if (!storedUser) {
       router.push('/login');
     } else {
-      
+
       const user = JSON.parse(storedUser);
       if (['admin', 'manager'].includes(user.role)) {
         router.push('/manageUser');
@@ -19,7 +19,7 @@ export default function RootPage() {
         router.push('/reports');
       }
     }
-  }, [router]);
+  }, [router]); // Dependency ถูกต้องแล้ว เพราะ router จะไม่เปลี่ยนค่าบ่อย
 
   // แสดง Loading ระหว่างรอดีด
   return (
