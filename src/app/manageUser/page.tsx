@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import EditUserModal from '@/components/EditUserModal';
 import AddUserModal from '@/components/AddUserModal';
-
+import AlertModal from '@/components/AlertModal'; // เพิ่มบรรทัดนี้
 
 
 export default function UserManagementPage() {
@@ -24,6 +24,33 @@ export default function UserManagementPage() {
     // Modals
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingUser, setEditingUser] = useState<any>(null);
+    const [deleteAlert, setDeleteAlert] = useState<{ show: boolean; userId: number | null }>({
+        show: false,
+        userId: null
+    }); // เพิ่มบรรทัดนี้
+    const [successAlert, setSuccessAlert] = useState<{ show: boolean; message: string }>({
+        show: false,
+        message: ''
+    });
+
+    // แก้ไข handleDeleteUser function
+    const handleDeleteUser = (userId: number) => {
+        setDeleteAlert({ show: true, userId });
+    };
+
+    // confirmDelete function
+    const confirmDelete = async () => {
+        if (deleteAlert.userId) {
+            const { error } = await supabase.from('users').delete().eq('id', deleteAlert.userId);
+            if (!error) {
+                setSuccessAlert({ show: true, message: 'ลบผู้ใช้เรียบร้อยแล้ว' });
+                fetchUsers(); // Refresh data
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + error.message);
+            }
+        }
+        setDeleteAlert({ show: false, userId: null });
+    };
 
     const BookIcon = () => (
         <svg className="w-10 h-10" fill="none" stroke="url(#logoGradient)" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -56,11 +83,12 @@ export default function UserManagementPage() {
     }, [router]);
 
     const fetchUsers = async () => {
-        
+
         const { data, error } = await supabase.from('users').select('*').order('id', { ascending: true });
         if (!error && data) setAllUsers(data);
         setLoading(true);
-        setLoading(false);    };
+        setLoading(false);
+    };
 
     // --- 2. Add User Logic (เพิ่มใหม่) ---
     const handleAddUser = async (userData: any) => {
@@ -72,12 +100,12 @@ export default function UserManagementPage() {
 
             if (error) throw error;
 
-            alert('เพิ่มสมาชิกเรียบร้อยแล้ว');
+            setSuccessAlert({ show: true, message: 'เพิ่มสมาชิกเรียบร้อยแล้ว' });
             fetchUsers(); // Refresh ตาราง
             setShowAddModal(false); // ปิด Modal
         } catch (error: any) {
             console.error('Error adding user:', error);
-            alert(`เกิดข้อผิดพลาด: ${error.message}`);
+            alert(`เกิดข้อผิดพลาดในการเพิ่มผู้ใช้: ${error.message}`);
         }
     };
 
@@ -90,24 +118,16 @@ export default function UserManagementPage() {
             const { error } = await supabase.from('users').update(payload).eq('id', userId);
             if (error) throw error;
 
-            alert('บันทึกเรียบร้อย');
+            setSuccessAlert({ show: true, message: 'บันทึกข้อมูลผู้ใช้เรียบร้อย' });
             fetchUsers();
+            setEditingUser(null); // ปิด Modal แก้ไข
         } catch (error) {
             console.error(error);
-            alert('เกิดข้อผิดพลาด');
+            alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
         }
     };
 
-    const handleDeleteUser = async (userId: number) => {
-        if (confirm('คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?')) {
-            const { error } = await supabase.from('users').delete().eq('id', userId);
-            if (!error) {
-                setAllUsers(prev => prev.filter(u => u.id !== userId));
-            } else {
-                alert('ลบไม่สำเร็จ');
-            }
-        }
-    };
+
 
     // 3. Filter Logic
     const filteredUsers = allUsers.filter(user => {
@@ -223,8 +243,14 @@ export default function UserManagementPage() {
                         <div className="px-6 py-4 bg-gray-50 flex justify-between items-center">
                             <span className="text-sm text-gray-600">หน้า {currentPage} จาก {totalPages}</span>
                             <div className="flex space-x-2">
-                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-2 py-1 border rounded"><ChevronLeft /></button>
-                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-2 py-1 border rounded"><ChevronRight /></button>
+                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:shadow-lg transition disabled:opacity-50 flex items-center space-x-2">
+                                    <ChevronLeft className="w-4 h-4" />
+                                    <span>ก่อนหน้า</span>
+                                </button>
+                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:shadow-lg transition disabled:opacity-50 flex items-center space-x-2">
+                                    <span>ถัดไป</span>
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -233,6 +259,28 @@ export default function UserManagementPage() {
 
             {editingUser && <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSave={handleUpdateUser} />}
             {showAddModal && <AddUserModal onClose={() => setShowAddModal(false)} onSave={handleAddUser} />}
+
+            {/* เพิ่ม AlertModal */}
+            {deleteAlert.show && (
+                <AlertModal
+                    title="คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้"
+                    message="การกระทำนี้ไม่สามารถเรียกคืนได้"
+                    onConfirm={confirmDelete}
+                    onCancel={() => setDeleteAlert({ show: false, userId: null })}
+                    confirmText="ตกลง"
+                    cancelText="ยกเลิก"
+                />
+            )}
+
+            {successAlert.show && (
+                <AlertModal
+                    title="สำเร็จ"
+                    message={successAlert.message}
+                    onConfirm={() => setSuccessAlert({ show: false, message: '' })}
+                    onCancel={() => setSuccessAlert({ show: false, message: '' })}
+                    cancelText={null} // ซ่อนปุ่มยกเลิก
+                />
+            )}
         </div>
     );
 }

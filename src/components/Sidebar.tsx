@@ -159,7 +159,7 @@ export default function LoginSidebar() {
                 >
                     <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-sm mx-auto border-1 border-b-[#333333]">
                         <h3 id="logout-modal-title" className="text-xl font-semibold text-gray-800 mb-4 text-center ">
-                            ยืนยันการออกจากระบบ
+                            ออกจากระบบ
                         </h3>
                         <p className="text-gray-600 mb-8 text-center">คุณต้องการออกจากระบบใช่หรือไม่?</p>
                         <div className="flex justify-center gap-4">
