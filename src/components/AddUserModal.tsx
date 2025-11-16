@@ -15,7 +15,7 @@ export default function AddUserModal({ onClose, onSave }: AddUserModalProps) {
         firstname: '',
         lastname: '',
         role: 'intern',
-        position: 'Fullstack'
+        position: 'Full stack'
     });
     const [isSaving, setIsSaving] = useState(false);
     const [showInfoModal, setShowInfoModal] = useState(false); // 👈 2. เพิ่ม State สำหรับ Modal
@@ -118,7 +118,7 @@ export default function AddUserModal({ onClose, onSave }: AddUserModalProps) {
                             >
                                 <option value="Frontend">Frontend</option>
                                 <option value="Backend">Backend</option>
-                                <option value="Fullstack">Fullstack</option>
+                                <option value="Full stack">Full stack</option>
                                 <option value="UX UI">UX UI</option>
                             </select>
                         </div>

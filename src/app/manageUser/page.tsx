@@ -199,7 +199,7 @@ export default function UserManagementPage() {
                                 {['ทั้งหมด', 'admin', 'manager', 'dev', 'intern'].map(r => <option key={r} value={r}>{r === 'ทั้งหมด' ? 'ตำแหน่ง: ทั้งหมด' : r}</option>)}
                             </select>
                             <select value={filterPosition} onChange={(e) => setFilterPosition(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg bg-[#333333] text-white">
-                                {['ทั้งหมด', 'Frontend', 'Backend', 'UX UI', 'Fullstack'].map(p => <option key={p} value={p}>{p === 'ทั้งหมด' ? 'บทบาท: ทั้งหมด' : p}</option>)}
+                                {['ทั้งหมด', 'Frontend', 'Backend', 'UX UI', 'Full stack'].map(p => <option key={p} value={p}>{p === 'ทั้งหมด' ? 'บทบาท: ทั้งหมด' : p}</option>)}
                             </select>
                         </div>
                     </div>
