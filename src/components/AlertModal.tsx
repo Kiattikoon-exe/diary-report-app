@@ -1,15 +1,13 @@
 'use client';
-
 import React from 'react';
 
 interface AlertModalProps {
     title: string;
     message: string;
     onConfirm: () => void;
-    onCancel?: () => void;
+    onCancel: () => void;
     confirmText?: string;
-    cancelText?: string;
-    showCancelButton?: boolean;
+    cancelText?: string | null;
 }
 
 export default function AlertModal({
@@ -19,28 +17,27 @@ export default function AlertModal({
     onCancel,
     confirmText = 'ตกลง',
     cancelText = 'ยกเลิก',
-    showCancelButton = false,
 }: AlertModalProps) {
     return (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-8 mx-4 max-xl:w-full">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">{title}</h3>
                 <p className="text-sm text-gray-700 mb-6">{message}</p>
-                <div className="flex justify-end space-x-3">
-                    {showCancelButton && (
+                <div className={`flex ${cancelText ? 'justify-between space-x-3' : 'justify-end'}`}>
+                    <button
+                        onClick={onConfirm}
+                        className="flex-1 px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:shadow-lg transition"
+                    >
+                        {confirmText}
+                    </button>
+                    {cancelText && (
                         <button
                             onClick={onCancel}
-                            className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors duration-200"
+                            className="flex-1 px-4 py-2 bg-[#333333] text-white rounded-lg hover:bg-gray-700 transition"
                         >
                             {cancelText}
                         </button>
                     )}
-                    <button
-                        onClick={onConfirm}
-                        className="px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-md hover:from-teal-600 hover:to-teal-700 transition-colors duration-200"
-                    >
-                        {confirmText}
-                    </button>
                 </div>
             </div>
         </div>

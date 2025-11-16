@@ -82,6 +82,37 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, children }: { is
     );
 };
 
+const InfoModal = ({ isOpen, onClose, title, children, showCancelButton = true }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode, showCancelButton?: boolean }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-opacity-50 z-50 flex justify-center items-center">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md text-center">
+                <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
+                <p className="text-gray-600 mb-6">{children}</p>
+                <div className={`flex gap-4 ${showCancelButton ? 'justify-end' : 'justify-center'}`}>
+                    {showCancelButton && (
+                        <button
+                            onClick={onClose}
+                            className="px-6 py-2 rounded-lg bg-[#333333] text-white hover:bg-black transition-colors"
+                        >
+                            ยกเลิก
+                        </button>
+                    )}
+                    {/* ปุ่มตกลงด้านขวา */}
+                    <button
+                        onClick={onClose}
+                        // ถ้ามีปุ่มเดียวให้ขยายเต็ม
+                        className="px-6 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:shadow-lg transition-shadow"
+                    >
+                        ตกลง
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 /**
  * Converts a date string or Date object to 'YYYY-MM-DD' format based on the local timezone,
  * preventing UTC conversion issues.
@@ -114,6 +145,11 @@ export default function DocumentsListPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10); // Default to 10 items per page
     const [showSaveConfirmModal, setShowSaveConfirmModal] = useState(false);
+
+    const [showInfoModal, setShowInfoModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+
 
     const BookIcon = () => (
         <svg className="w-10 h-10" fill="none" stroke="url(#logoGradient)" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -221,7 +257,7 @@ export default function DocumentsListPage() {
             if (!response.ok) throw new Error(result.error || 'Failed to save');
 
             console.log("✅ Save successful:", result);
-            alert('บันทึกข้อมูลเรียบร้อย!');
+            setShowSuccessModal(true); // แสดง Modal แจ้งเตือนความสำเร็จ
             setEditingRowIds([]);
             setIsEditing(false);
 
@@ -250,20 +286,28 @@ export default function DocumentsListPage() {
             setIsEditing(true);
             setEditingRowIds(documents.map(doc => doc.document_id)); // 👈 แก้ไข
         } else {
-            // ตรวจสอบว่ามีการแก้ไขข้อมูลหรือไม่
-            const hasChanges = documents.some(doc => {
-                if (!editingRowIds.includes(doc.document_id)) return false;
-                const originalDoc = originalDocuments.find(orig => orig.document_id === doc.document_id);
-                // ถ้าเป็นแถวใหม่ ให้เช็คว่ามีการกรอกข้อมูลหรือไม่
-                if (doc.document_id < 0) {
-                    return doc.report.trim() !== '' || doc.nextfocus.trim() !== '';
+            // ตรวจสอบว่าแถวใหม่ที่เพิ่มเข้ามา (ID ติดลบ) ว่างเปล่าหรือไม่
+            const hasEmptyNewRow = documents.some(doc =>
+                doc.document_id < 0 && doc.report.trim() === '' && doc.nextfocus.trim() === ''
+            );
+
+            if (hasEmptyNewRow) {
+                setShowInfoModal(true); // แสดง Modal ถ้าแถวใหม่ว่าง
+                return;
+            }
+
+            // ตรวจสอบว่ามีการเปลี่ยนแปลงในแถวที่มีอยู่แล้วหรือไม่
+            const hasChangesInExistingRows = documents.some(doc => {
+                if (doc.document_id >= 0) { // เช็คเฉพาะแถวที่มีอยู่แล้ว
+                    const originalDoc = originalDocuments.find(orig => orig.document_id === doc.document_id);
+                    return originalDoc && (originalDoc.report !== doc.report || originalDoc.nextfocus !== doc.nextfocus || originalDoc.date !== doc.date || originalDoc.status !== doc.status);
                 }
-                return originalDoc && (originalDoc.report !== doc.report || originalDoc.nextfocus !== doc.nextfocus || originalDoc.date !== doc.date || originalDoc.status !== doc.status);
+                return false;
             });
 
-            if (!hasChanges) {
-                alert("กรุณากรอกข้อมูลก่อนบันทึก หรือข้อมูลไม่มีการเปลี่ยนแปลง");
-                return;
+            if (!hasChangesInExistingRows && !documents.some(doc => doc.document_id < 0)) {
+                handleCancelEdit(); // ถ้าไม่มีการเปลี่ยนแปลง ให้ยกเลิกโหมดแก้ไขเลย
+                return; // ออกจากฟังก์ชัน
             }
             setShowSaveConfirmModal(true);
         }
@@ -353,7 +397,7 @@ export default function DocumentsListPage() {
                                         disabled={loading}
                                         className="px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:shadow-lg transition flex items-center space-x-2"
                                     >
-                                        {loading ? 'กำลังบันทึก...' : '💾 บันทึก'}
+                                        {loading ? 'กำลังบันทึก...' : 'บันทึก'}
                                     </button>
                                     <button
                                         type="button"
@@ -370,7 +414,7 @@ export default function DocumentsListPage() {
                                     disabled={loading}
                                     className="bg-[#6e6e6e] text-white px-5 py-2 rounded-lg hover:bg-[#5c5a5a] transition text-sm font-medium"
                                 >
-                                    ✏️ แก้ไข
+                                    แก้ไข
                                 </button>
                             )}
                             <button
@@ -392,6 +436,23 @@ export default function DocumentsListPage() {
                     >
                         คุณต้องการเปลี่ยนแปลงข้อมูลของคุณ
                     </ConfirmationModal>
+
+                    <InfoModal
+                        isOpen={showInfoModal}
+                        onClose={() => setShowInfoModal(false)} title="ข้อมูลไม่ครบถ้วน"
+                    >
+                        กรุณากรอกข้อมูลให้ครบถ้วนก่อนทำการบันทึก
+                    </InfoModal>
+
+                    <InfoModal
+                        isOpen={showSuccessModal}
+                        onClose={() => setShowSuccessModal(false)}
+                        showCancelButton={false} // 👈 ซ่อนปุ่มยกเลิก
+                        title="สำเร็จ"
+                    >
+                        บันทึกข้อมูลของคุณเรียบร้อยแล้ว
+                    </InfoModal>
+
 
 
 
@@ -527,7 +588,7 @@ export default function DocumentsListPage() {
                         </div>
                         {/* Pagination */}
                         <div className="px-6 py-4 bg-gray-50 flex justify-between items-center border-t border-gray-200">
-                            <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-4 ">
                                 <span className="text-sm text-gray-600">แสดง</span>
                                 <select
                                     value={itemsPerPage}
@@ -535,7 +596,7 @@ export default function DocumentsListPage() {
                                         setItemsPerPage(Number(e.target.value));
                                         setCurrentPage(1); // Reset to first page when items per page changes
                                     }}
-                                    className="px-2 py-1 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm"
+                                    className="pl-4 pr-8 py-2 border border-gray-300 rounded-lg bg-[#333333] text-white"
                                     title="Items per page"
                                 >
                                     <option value={10}>10</option>
@@ -547,8 +608,14 @@ export default function DocumentsListPage() {
                             </div>
                             <span className="text-sm text-gray-600">หน้า {currentPage} จาก {totalPages}</span>
                             <div className="flex space-x-2">
-                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-2 py-1 border rounded" aria-label="Previous page"><ChevronLeft /></button>
-                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-2 py-1 border rounded" aria-label="Next page"><ChevronRight /></button>
+                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:shadow-lg transition disabled:opacity-50 flex items-center space-x-2">
+                                    <ChevronLeft className="w-4 h-4" />
+                                    <span>ก่อนหน้า</span>
+                                </button>
+                                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-lg hover:shadow-lg transition disabled:opacity-50 flex items-center space-x-2">
+                                    <span>ถัดไป</span>
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
                     </div>
