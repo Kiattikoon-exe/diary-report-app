@@ -40,80 +40,67 @@ export async function POST(req: Request) {
         );
       }
 
-      // แยก docData สำหรับ INSERT และ UPDATE
-      const docDataForInsert = {
+      // ✨ [REFACTORED] สร้าง data object ที่มีฟิลด์ทั้งหมดในครั้งเดียว
+      const docData = {
         user_id: doc.user_id,
         report: doc.report || "",
-        
         nextfocus: doc.nextfocus || "",
         status: doc.status || "",
         date: doc.date || new Date().toISOString().split("T")[0],
-      };
-
-      // สำหรับ UPDATE ไม่ต้องส่ง user_id (เพราะไม่ควรเปลี่ยน)
-      const docDataForUpdate = {
-        report: doc.report || "",
-        
-        nextfocus: doc.nextfocus || "",
-        status: doc.status || "",
-        date: doc.date || new Date().toISOString().split("T")[0],
+        remark: doc.remark || null, // ✨ (เพิ่ม) ถ้า remark ว่างให้เป็น null
+        updated_at: new Date().toISOString(), // ✨ (แก้ไข) เพิ่มการกำหนดค่า updated_at ให้เป็นเวลาปัจจุบันเสมอ
+        last_editor_id: doc.last_editor_id || null, // ✨ (เพิ่ม)
+        is_remark_read: doc.is_remark_read, // ✨ (เพิ่ม)
+        is_read_by_admin: doc.is_read_by_admin, // ✨ (เพิ่ม)
       };
 
       console.log("📄 Processing document:", {
         id: doc.document_id,
-        dataForInsert: docDataForInsert,
-        dataForUpdate: docDataForUpdate,
+        data: docData,
       });
 
       if (doc.document_id < 0) {
         // Validation: Ensure either report or nextfocus is not empty for new documents
-        if (doc.report.trim() === '' && doc.nextfocus.trim() === '') {
-          console.error("❌ Validation failed: 'report' or 'nextfocus' must not be empty for new document.", doc);
+        if (doc.report.trim() === "" && doc.nextfocus.trim() === "") {
+          console.error(
+            "❌ Validation failed: 'report' or 'nextfocus' must not be empty for new document.",
+            doc
+          );
           return NextResponse.json(
-            { error: "กรุณากรอกข้อมูลในช่อง 'Going on' หรือ 'Next Focus' อย่างน้อยหนึ่งช่องสำหรับเอกสารใหม่", document: doc },
+            {
+              error:
+                "กรุณากรอกข้อมูลในช่อง 'Going on' หรือ 'Next Focus' อย่างน้อยหนึ่งช่องสำหรับเอกสารใหม่",
+              document: doc,
+            },
             { status: 400 }
           );
         }
 
         // INSERT - ใช้ docDataForInsert (มี user_id)
-        console.log("➕ Attempting INSERT:", docDataForInsert);
+        console.log("➕ Attempting INSERT:", docData);
 
         const { data, error } = await supabaseAdmin
           .from("documents")
-          .insert(docDataForInsert)
+          .insert(docData)
           .select();
 
         if (error) {
           console.error("❌ INSERT Error:", error);
-
-          console.log("🔄 Retrying with explicit schema...");
-          const { data: data2, error: error2 } = await supabaseAdmin
-
-            .from("documents")
-            .insert(docDataForInsert)
-            .select();
-
-          if (error2) {
-            console.error("❌ INSERT Error (retry):", error2);
-            return NextResponse.json(
-              { error: `INSERT failed: ${error2.message}`, details: error2 },
-              { status: 500 }
-            );
-          }
-
-          console.log("✅ INSERT Success (retry):", data2);
-          results.push({ action: "insert", data: data2 });
-          continue;
+          return NextResponse.json(
+            { error: `INSERT failed: ${error.message}`, details: error },
+            { status: 500 }
+          );
         }
 
         console.log("✅ INSERT Success:", data);
         results.push({ action: "insert", data });
       } else {
-        // UPDATE - ใช้ docDataForUpdate (ไม่มี user_id)
-        console.log("✏️ Attempting UPDATE:", doc.document_id, docDataForUpdate);
+        // UPDATE - ลบ user_id ออกก่อน เพราะไม่ควรเปลี่ยนเจ้าของ
+        const { user_id, ...updateData } = docData;
+        console.log("✏️ Attempting UPDATE:", doc.document_id, updateData);
         const { data, error } = await supabaseAdmin
           .from("documents")
-          .update(docDataForUpdate)
+          .update(updateData)
           .eq("document_id", doc.document_id)
           .select();
 
@@ -124,7 +111,6 @@ export async function POST(req: Request) {
             { status: 500 }
           );
         }
-        
 
         console.log("✅ UPDATE Success:", data);
         results.push({ action: "update", data });

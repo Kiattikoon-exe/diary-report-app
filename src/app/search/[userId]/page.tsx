@@ -16,6 +16,11 @@ const GoingOnIcon = () => (
 const NextFocusIcon = () => (
     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
 );
+// ✨ (เพิ่ม) ไอคอนสำหรับ Remark
+const RemarkIcon = () => (
+    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4z"></path></svg>
+);
+
 const StatusIcon = () => (
     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
 );
@@ -84,6 +89,7 @@ interface DocumentItem {
     date: string;
     users: User;
     user_id: string;
+    remark: string; // ✨ (เพิ่ม)
 }
 
 export default function ViewUserReportPage() {
@@ -94,6 +100,7 @@ export default function ViewUserReportPage() {
 
     // State
     const [documents, setDocuments] = useState<DocumentItem[]>([]);
+    const [viewer, setViewer] = useState<any>(null); // 👈 Role และ ID ของคนที่กำลังดู
     const [viewerRole, setViewerRole] = useState<string | null>(null); // 👈 Role ของคนที่กำลังดู (Admin/Manager)
     const [viewedUser, setViewedUser] = useState<any>(null); // 👈 ข้อมูลของคนที่เรากำลังดู
     const [loading, setLoading] = useState(true);
@@ -141,12 +148,13 @@ export default function ViewUserReportPage() {
     const fetchUserDocuments = async (userId: string, userData: any) => {
         const { data, error } = await supabase
             .from('documents')
-            .select(`document_id, report, nextfocus, status, date, user_id`)
+            // ✨ (แก้ไข) เพิ่ม remark
+            .select(`document_id, report, nextfocus, status, date, user_id, remark`)
             .eq('user_id', userId)
             .order('date', { ascending: true });
 
         if (!error) {
-            const normalized = (data || []).map((d: any) => ({
+            const normalized = (data || []).map((d: any) => ({ // เพิ่ม remark: d.remark || ''
                 ...d,
                 users: { username: userData.username || '', role: userData.role || '' }
             })) as DocumentItem[];
@@ -168,12 +176,14 @@ export default function ViewUserReportPage() {
         }
         const user = JSON.parse(storedUser);
 
+        const isAdminOrManager = user.role === 'admin' || user.role === 'manager';
         // ถ้าไม่ใช่ Admin หรือ Manager, ให้ออก
-        if (!['admin', 'manager'].includes(user.role)) {
+        if (!isAdminOrManager) {
             router.push('/reports'); // ดีดกลับหน้าตัวเอง
             return;
         }
 
+        setViewer(user); // 👈 เก็บข้อมูลคนดูทั้งหมด
         setViewerRole(user.role); // 👈 เก็บ Role ของคนดู (Admin/Manager)
 
         // 2. ดึงข้อมูลหน้านี้
@@ -195,14 +205,29 @@ export default function ViewUserReportPage() {
             if (doc.document_id < 0) return true;
             const originalDoc = originalDocuments.find(orig => orig.document_id === doc.document_id);
             if (!originalDoc) return false;
-            return originalDoc.report !== doc.report || originalDoc.nextfocus !== doc.nextfocus || originalDoc.date !== doc.date || originalDoc.status !== doc.status;
+            // ✨ (แก้ไข) เพิ่ม remark ในการตรวจสอบ
+            return originalDoc.report !== doc.report ||
+                originalDoc.nextfocus !== doc.nextfocus ||
+                originalDoc.date !== doc.date ||
+                originalDoc.status !== doc.status ||
+                originalDoc.remark !== doc.remark;
         });
+
+        // ✨ (แก้ไข) เพิ่ม last_editor_id และสถานะการอ่านเข้าไปในข้อมูลที่จะบันทึก
+        const payload = docsToSave.map(doc => ({
+            ...doc,
+            last_editor_id: viewer.id, // ID ของ Admin/Manager ที่กำลังแก้ไข
+            // เมื่อมีการแก้ไขโดย Admin/Manager ให้ถือว่า user ยังไม่ได้อ่าน remark ใหม่
+            is_remark_read: false,
+            // และให้ถือว่า Admin ได้อ่านการเปลี่ยนแปลงนี้แล้ว
+            is_read_by_admin: true,
+        }));
 
         try {
             const response = await fetch('/api/save-documents/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ documents: docsToSave }),
+                body: JSON.stringify({ documents: payload }), // ✨ (แก้ไข) ส่ง payload ที่มีข้อมูลครบถ้วน
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Failed to save');
@@ -246,7 +271,13 @@ export default function ViewUserReportPage() {
             const hasChangesInExistingRows = documents.some(doc => {
                 if (doc.document_id >= 0) {
                     const originalDoc = originalDocuments.find(orig => orig.document_id === doc.document_id);
-                    return originalDoc && (originalDoc.report !== doc.report || originalDoc.nextfocus !== doc.nextfocus || originalDoc.date !== doc.date || originalDoc.status !== doc.status);
+                    // ✨ (แก้ไข) เพิ่ม remark ในการตรวจสอบ
+                    return originalDoc && (
+                        originalDoc.report !== doc.report ||
+                        originalDoc.nextfocus !== doc.nextfocus ||
+                        originalDoc.date !== doc.date ||
+                        originalDoc.status !== doc.status ||
+                        originalDoc.remark !== doc.remark);
                 }
                 return false;
             });
@@ -321,7 +352,7 @@ export default function ViewUserReportPage() {
                         </div>
 
                         {/* 👈 3. [สำคัญ] เช็คสิทธิ์คนดู (viewerRole) ก่อนแสดงปุ่ม */}
-                        {viewerRole === 'admin' && (
+                        {(viewerRole === 'admin' || viewerRole === 'manager') && (
                             <div className="flex flex-wrap gap-2">
                                 {isEditing ? (
                                     <>
@@ -357,17 +388,18 @@ export default function ViewUserReportPage() {
                                         <th className="px-6 py-3 text-left text-sm font-semibold">Date</th>
                                         <th className="px-6 py-3 text-left text-sm font-semibold">Going on</th>
                                         <th className="px-6 py-3 text-left text-sm font-semibold">Next Focus</th>
+                                        <th className="px-6 py-3 text-left text-sm font-semibold">ข้อเสนอแนะ</th>
                                         <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>
-                                        {viewerRole === 'admin' && <th className="px-6 py-3 text-left text-sm font-semibold">จัดการ</th>}
+                                        {(viewerRole === 'admin' || viewerRole === 'manager') && <th className="px-6 py-3 text-left text-sm font-semibold">จัดการ</th>}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {documents.length === 0 ? (
-                                        <tr><td colSpan={viewerRole === 'admin' ? 5 : 4} className="px-6 py-4 text-center text-gray-500">✅ ไม่พบรายงาน</td></tr>
+                                        <tr><td colSpan={(viewerRole === 'admin' || viewerRole === 'manager') ? 6 : 5} className="px-6 py-4 text-center text-gray-500">✅ ไม่พบรายงาน</td></tr>
                                     ) : (
                                         paginatedDocuments.map((doc) => {
                                             const formattedDateForInput = formatDateForInput(doc.date);
-                                            const isRowEditing = viewerRole === 'admin' && editingRowIds.includes(doc.document_id);
+                                            const isRowEditing = (viewerRole === 'admin' || viewerRole === 'manager') && editingRowIds.includes(doc.document_id);
 
                                             return (
                                                 <tr key={doc.document_id} className={`hover:bg-gray-50 ${doc.document_id < 0 ? 'bg-teal-50' : ''}`}>
@@ -395,6 +427,30 @@ export default function ViewUserReportPage() {
                                                             </div>
                                                         ) : (<p className="whitespace-pre-wrap break-all">{doc.nextfocus}</p>)}
                                                     </td>
+                                                    {/* ✨ (เพิ่ม) <td> ใหม่สำหรับ Remark */}
+                                                    <td className="px-6 py-4 text-sm text-gray-700 max-w-sm">
+                                                        {isRowEditing ? ( // Admin/Manager ในโหมดแก้ไข
+                                                            <div className="relative">
+                                                                <span className="absolute left-2 top-3 text-gray-400">
+                                                                    <RemarkIcon />
+                                                                </span>
+                                                                <textarea
+                                                                    value={doc.remark || ''}
+                                                                    onChange={(e) => handleInputChange(doc.document_id, 'remark', e.target.value)}
+                                                                    className="w-full p-2 pl-8 border border-gray-300 rounded-md shadow-sm text-gray-900"
+                                                                    rows={2}
+                                                                    placeholder="กรอกข้อเสนอแนะ..."
+                                                                />
+                                                            </div>
+                                                        ) : ( // โหมดแสดงผลปกติ
+                                                            <p
+                                                                className="whitespace-pre-wrap break-all p-2 rounded-md"
+                                                                title={doc.remark}
+                                                            >
+                                                                {doc.remark}
+                                                            </p>
+                                                        )}
+                                                    </td>
                                                     <td className="px-6 py-4 text-sm">
                                                         {isRowEditing ? (
                                                             <div className="flex flex-col space-y-2">
@@ -405,7 +461,7 @@ export default function ViewUserReportPage() {
                                                             <div className="flex items-center text-sm font-medium"><span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '1' ? 'bg-teal-500' : 'bg-[#333333]'}`}></span>{doc.status === '1' ? 'เสร็จสิ้น' : 'กำลังดำเนินงาน'}</div>
                                                         )}
                                                     </td>
-                                                    {viewerRole === 'admin' && (
+                                                    {(viewerRole === 'admin' || viewerRole === 'manager') && (
                                                         <td className="px-6 py-4 text-sm">
                                                             {isRowEditing && <button onClick={() => setDeleteTarget(doc.document_id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>}
                                                         </td>
