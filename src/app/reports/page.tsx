@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from '@/utils/supabase/client';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -21,8 +20,9 @@ interface DocumentItem {
     nextfocus: string;
     status: '0' | '1';
     date: string;
-    users: User;      // 👈 แก้ไข (จาก user)
-    user_id: string;  // 👈 แก้ไข (จาก UID)
+    users: User;      // 👈 แก้ไข (จาก user)
+    user_id: string;  // 👈 แก้ไข (จาก UID)
+    remark: string;   // ✨ (เพิ่ม) เพิ่มฟิลด์ remark
 }
 
 // --- ไอคอน (เหมือนเดิม) ---
@@ -38,6 +38,12 @@ const NextFocusIcon = () => (
 const StatusIcon = () => (
     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
 );
+
+// ✨ (เพิ่ม) ไอคอนสำหรับ Remark
+const RemarkIcon = () => (
+    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4z"></path></svg>
+);
+
 const EditIcon = () => (
     <svg className="w-4 h-4 text-gray-400 absolute top-2 right-2 group-hover:text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
 );
@@ -129,6 +135,7 @@ const formatDateForInput = (dateInput: string | Date): string => {
 // --- 2. Page Component (Main Export) ---
 export default function DocumentsListPage() {
     const router = useRouter();
+    const searchParams = useSearchParams(); // ✨ (เพิ่ม) Hook สำหรับอ่าน URL params
     const tableContainerRef = React.useRef<HTMLDivElement>(null);
 
     // --- 3. State ---
@@ -149,26 +156,13 @@ export default function DocumentsListPage() {
     const [showInfoModal, setShowInfoModal] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-
-
-    const BookIcon = () => (
-        <svg className="w-10 h-10" fill="none" stroke="url(#logoGradient)" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" style={{ stopColor: '#0891b2', stopOpacity: 1 }} />
-                    <stop offset="100%" style={{ stopColor: '#14b8a6', stopOpacity: 1 }} />
-                </linearGradient>
-            </defs>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.484 9.332 5 7.5 5S4.168 5.484 3 6.253v13C4.168 18.484 5.668 18 7.5 18s3.332.484 4.5 1.253m0-13C13.168 5.484 14.668 5 16.5 5c1.831 0 3.332.484 4.5 1.253v13C19.832 18.484 18.332 18 16.5 18c-1.831 0-3.332.484-4.5 1.253"></path>
-        </svg>
-    );
-
     // --- Fetch Data ---
     const fetchUserDocuments = async (userId: string) => {
         setLoading(true);
         const { data, error } = await supabase
             .from('documents')
-            .select(`document_id, report, nextfocus, status, date, user_id`)
+            // ✨ (แก้ไข) เพิ่ม remark ใน .select()
+            .select(`document_id, report, nextfocus, status, date, user_id, remark`)
             .eq('user_id', userId)
             .order('date', { ascending: true });
 
@@ -215,6 +209,28 @@ export default function DocumentsListPage() {
         }
     }, [router]);
 
+    // ✨ (เพิ่ม) Effect สำหรับจัดการ Highlight
+    useEffect(() => {
+        const highlightId = searchParams.get('highlight');
+        if (highlightId && documents.length > 0) {
+            const docId = parseInt(highlightId, 10);
+
+            // หาหน้าที่เอกสารนั้นอยู่
+            const docIndex = documents.findIndex(d => d.document_id === docId);
+            if (docIndex !== -1) {
+                const targetPage = Math.floor(docIndex / itemsPerPage) + 1;
+                setCurrentPage(targetPage);
+
+                // เลื่อนไปยังแถวที่ไฮไลท์
+                setTimeout(() => {
+                    const rowElement = document.querySelector(`[data-doc-id="${docId}"]`);
+                    rowElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100); // หน่วงเวลาเล็กน้อยเพื่อให้ UI render เสร็จ
+            }
+        }
+    }, [documents, searchParams, itemsPerPage]);
+
+
     // --- Handlers (Save, Cancel, Edit, Add) ---
     const handleInputChange = (docId: number, field: keyof DocumentItem, value: string) => {
         setDocuments(prev => prev.map(doc => doc.document_id === docId ? { ...doc, [field]: value } : doc));
@@ -239,18 +255,39 @@ export default function DocumentsListPage() {
             if (!originalDoc) return false; // ไม่ควรเกิดขึ้น
 
             // คืนค่า true ถ้ามี field ใดๆ เปลี่ยนแปลง
-            return originalDoc.report !== doc.report || originalDoc.nextfocus !== doc.nextfocus || originalDoc.date !== doc.date || originalDoc.status !== doc.status;
+            // ✨ (แก้ไข) เพิ่มการตรวจสอบ remark
+            return originalDoc.report !== doc.report ||
+                originalDoc.nextfocus !== doc.nextfocus ||
+                originalDoc.date !== doc.date ||
+                originalDoc.status !== doc.status ||
+                originalDoc.remark !== doc.remark;
         });
 
-        console.log("📝 Documents to save (Only changed ones):", docsToSave);
+        // ✨ (เพิ่ม) เพิ่ม last_editor_id เข้าไปในข้อมูลที่จะบันทึก
+        const payload = docsToSave.map(doc => {
+            const originalDoc = originalDocuments.find(orig => orig.document_id === doc.document_id);
+            const isRespondingToRemark = originalDoc && originalDoc.remark;
+
+            return {
+                ...doc,
+                // ✨ (แก้ไข) ถ้าเป็นการตอบกลับ remark ให้ลบ remark เดิมทิ้ง
+                remark: isRespondingToRemark ? null : doc.remark,
+                last_editor_id: currentUser.user_id,
+                // เมื่อมีการแก้ไข remark ให้ถือว่า user ยังไม่ได้อ่าน
+                is_remark_read: false,
+                // ✨ (แก้ไข) ถ้าเป็นการตอบกลับ remark ให้แจ้งเตือน Admin กลับ
+                // ถ้าเป็นการแก้ไขปกติโดย Admin เอง ให้ถือว่าอ่านแล้ว
+                is_read_by_admin: isRespondingToRemark ? false : true,
+            };
+        });
 
 
 
         try {
-            const response = await fetch('/api/save-documents/', {
+            const response = await fetch('/api/save-documents/', { // ส่ง payload ที่มี last_editor_id
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ documents: docsToSave }),
+                body: JSON.stringify({ documents: payload }),
             });
 
             const result = await response.json();
@@ -300,7 +337,14 @@ export default function DocumentsListPage() {
             const hasChangesInExistingRows = documents.some(doc => {
                 if (doc.document_id >= 0) { // เช็คเฉพาะแถวที่มีอยู่แล้ว
                     const originalDoc = originalDocuments.find(orig => orig.document_id === doc.document_id);
-                    return originalDoc && (originalDoc.report !== doc.report || originalDoc.nextfocus !== doc.nextfocus || originalDoc.date !== doc.date || originalDoc.status !== doc.status);
+                    // ✨ (แก้ไข) เพิ่มการตรวจสอบ remark
+                    return originalDoc && (
+                        originalDoc.report !== doc.report ||
+                        originalDoc.nextfocus !== doc.nextfocus ||
+                        originalDoc.date !== doc.date ||
+                        originalDoc.status !== doc.status ||
+                        originalDoc.remark !== doc.remark
+                    );
                 }
                 return false;
             });
@@ -325,6 +369,7 @@ export default function DocumentsListPage() {
             status: '0',
             date: formatDateForInput(new Date()), // Use timezone-safe formatter
             user_id: currentUser.user_id, // 👈 แก้ไข
+            remark: '', // ✨ (เพิ่ม)
             users: { username: currentUser.username, role: '' }
         };
 
@@ -461,27 +506,23 @@ export default function DocumentsListPage() {
                         <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
                             <table className="w-full">
                                 <thead className="bg-[#333333] text-white sticky top-0 z-10">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold">Date</th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold">Going on</th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold">Next Focus</th>
-                                        <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>
-                                    </tr>
+                                    <tr><th className="px-6 py-3 text-left text-sm font-semibold">Date</th><th className="px-6 py-3 text-left text-sm font-semibold">Going on</th><th className="px-6 py-3 text-left text-sm font-semibold">Next Focus</th><th className="px-6 py-3 text-left text-sm font-semibold">ข้อเสนอแนะ</th>{/* ✨ (เพิ่ม) */}<th className="px-6 py-3 text-left text-sm font-semibold">Status</th></tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {documents.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                                                ✅ ไม่พบรายงาน คุณยังไม่ได้สร้างรายงานใดๆ
-                                            </td>
-                                        </tr>
+                                        <tr><td colSpan={5} className="px-6 py-4 text-center text-gray-500">{/* ✨ (แก้ไข) colSpan="5" */}
+                                            ✅ ไม่พบรายงาน คุณยังไม่ได้สร้างรายงานใดๆ
+                                        </td></tr>
                                     ) : (
                                         paginatedDocuments.map((doc) => {
                                             const formattedDateForInput = formatDateForInput(doc.date);
                                             const isRowEditing = editingRowIds.includes(doc.document_id);
+                                            const highlightId = searchParams.get('highlight');
+                                            const isHighlighted = highlightId && doc.document_id === parseInt(highlightId, 10);
+                                            const isAdminOrManager = currentUser?.role === 'admin' || currentUser?.role === 'manager';
 
                                             return (
-                                                <tr key={doc.document_id} className="hover:bg-gray-50">
+                                                <tr key={doc.document_id} data-doc-id={doc.document_id} className={`hover:bg-gray-50 ${isHighlighted ? 'highlight-row' : ''}`}>
                                                     <td className="px-6 py-4 text-sm text-gray-700">
                                                         {isRowEditing ? (
                                                             <div className="relative flex items-center">
@@ -541,6 +582,34 @@ export default function DocumentsListPage() {
                                                             <p className="whitespace-pre-wrap break-all" title={doc.nextfocus}>{doc.nextfocus}</p>
                                                         )}
                                                     </td>
+
+                                                    {/* ✨ (เพิ่ม) <td> ใหม่สำหรับ Remark */}
+                                                    <td className="px-6 py-4 text-sm text-gray-700 max-w-sm">
+                                                        {isRowEditing && isAdminOrManager ? (
+                                                            <div className="relative">
+                                                                <span className="absolute left-2 top-3 text-gray-400">
+                                                                    <RemarkIcon />
+                                                                </span>
+                                                                <textarea
+                                                                    value={doc.remark || ''}
+                                                                    onChange={(e) => handleInputChange(doc.document_id, 'remark', e.target.value)}
+                                                                    className="w-full p-2 pl-8 border border-gray-300 rounded-md shadow-sm text-gray-900"
+                                                                    rows={2}
+                                                                    placeholder="กรอกข้อเสนอแนะ..."
+                                                                    title="ข้อเสนอแนะ"
+                                                                    aria-label="Remark"
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <p
+                                                                className={`whitespace-pre-wrap break-all p-2 rounded-md ${isRowEditing ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                                                title={doc.remark}
+                                                            >
+                                                                {doc.remark || (isRowEditing ? '-' : '')}
+                                                            </p>
+                                                        )}
+                                                    </td>
+
                                                     <td className="px-6 py-4 text-sm">
                                                         {isRowEditing ? (
                                                             <div className="flex flex-col space-y-2">
@@ -586,7 +655,7 @@ export default function DocumentsListPage() {
                                 </tbody>
                             </table>
                         </div>
-                        {/* Pagination */}
+                        {/* Pagination (คง UI เดิมของคุณไว้) */}
                         <div className="px-6 py-4 bg-gray-50 flex justify-between items-center border-t border-gray-200">
                             <div className="flex items-center space-x-4 ">
                                 <span className="text-sm text-gray-600">แสดง</span>
