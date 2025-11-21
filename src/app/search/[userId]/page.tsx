@@ -407,7 +407,7 @@ export default function ViewUserReportPage() {
                                                         {isRowEditing ? (
                                                             <div className="relative flex items-center">
                                                                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"><DateIcon /></span>
-                                                                <input type="date" value={formattedDateForInput} onChange={(e) => handleInputChange(doc.document_id, 'date', e.target.value)} className="w-full p-2 pl-8 border border-gray-300 rounded-md shadow-sm text-gray-900" />
+                                                                <input type="date" value={formattedDateForInput} onChange={(e) => handleInputChange(doc.document_id, 'date', e.target.value)} className="w-full p-2 pl-8 border border-gray-300 rounded-md shadow-sm text-gray-900 bg-gray-100" disabled />
                                                             </div>
                                                         ) : (new Date(doc.date).toLocaleDateString('th-TH', { dateStyle: 'medium' }))}
                                                     </td>
@@ -415,7 +415,7 @@ export default function ViewUserReportPage() {
                                                         {isRowEditing ? (
                                                             <div className="relative">
                                                                 <span className="absolute left-2 top-3 text-gray-400"><GoingOnIcon /></span>
-                                                                <textarea value={doc.report} onChange={(e) => handleInputChange(doc.document_id, 'report', e.target.value)} className="w-full p-2 pl-8 border border-gray-300 rounded-md shadow-sm text-gray-900" rows={2} placeholder="กรอกสิ่งที่ทำ..." />
+                                                                <textarea value={doc.report} onChange={(e) => handleInputChange(doc.document_id, 'report', e.target.value)} className="w-full p-2 pl-8 border border-gray-300 rounded-md shadow-sm text-gray-900 bg-gray-100" rows={2} placeholder="กรอกสิ่งที่ทำ..." disabled />
                                                             </div>
                                                         ) : (<p className="whitespace-pre-wrap break-all">{doc.report}</p>)}
                                                     </td>
@@ -423,7 +423,7 @@ export default function ViewUserReportPage() {
                                                         {isRowEditing ? (
                                                             <div className="relative">
                                                                 <span className="absolute left-2 top-3 text-gray-400"><NextFocusIcon /></span>
-                                                                <textarea value={doc.nextfocus} onChange={(e) => handleInputChange(doc.document_id, 'nextfocus', e.target.value)} className="w-full p-2 pl-8 border border-gray-300 rounded-md shadow-sm text-gray-900" rows={2} placeholder="กรอกสิ่งที่จะทำต่อไป..." />
+                                                                <textarea value={doc.nextfocus} onChange={(e) => handleInputChange(doc.document_id, 'nextfocus', e.target.value)} className="w-full p-2 pl-8 border border-gray-300 rounded-md shadow-sm text-gray-900 bg-gray-100" rows={2} placeholder="กรอกสิ่งที่จะทำต่อไป..." disabled />
                                                             </div>
                                                         ) : (<p className="whitespace-pre-wrap break-all">{doc.nextfocus}</p>)}
                                                     </td>
@@ -454,8 +454,8 @@ export default function ViewUserReportPage() {
                                                     <td className="px-6 py-4 text-sm">
                                                         {isRowEditing ? (
                                                             <div className="flex flex-col space-y-2">
-                                                                <label className="flex items-center text-sm cursor-pointer"><input type="radio" name={`status-${doc.document_id}`} value="1" checked={doc.status === '1'} onChange={(e) => handleInputChange(doc.document_id, 'status', e.target.value)} className="mr-2 h-4 w-4 text-teal-500" /> เสร็จสิ้น</label>
-                                                                <label className="flex items-center text-sm cursor-pointer"><input type="radio" name={`status-${doc.document_id}`} value="0" checked={doc.status === '0'} onChange={(e) => handleInputChange(doc.document_id, 'status', e.target.value)} className="mr-2 h-4 w-4 text-gray-600" /> กำลังดำเนินงาน</label>
+                                                                <label className="flex items-center text-sm cursor-not-allowed text-gray-500"><input type="radio" name={`status-${doc.document_id}`} value="1" checked={doc.status === '1'} onChange={(e) => handleInputChange(doc.document_id, 'status', e.target.value)} className="mr-2 h-4 w-4 text-teal-500" disabled /> เสร็จสิ้น</label>
+                                                                <label className="flex items-center text-sm cursor-not-allowed text-gray-500"><input type="radio" name={`status-${doc.document_id}`} value="0" checked={doc.status === '0'} onChange={(e) => handleInputChange(doc.document_id, 'status', e.target.value)} className="mr-2 h-4 w-4 text-gray-600" disabled /> กำลังดำเนินงาน</label>
                                                             </div>
                                                         ) : (
                                                             <div className="flex items-center text-sm font-medium"><span className={`w-3 h-3 rounded-full mr-2 ${doc.status === '1' ? 'bg-teal-500' : 'bg-[#333333]'}`}></span>{doc.status === '1' ? 'เสร็จสิ้น' : 'กำลังดำเนินงาน'}</div>
